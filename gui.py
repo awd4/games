@@ -5,23 +5,8 @@ import struct
 import tkinter as tk
 
 import netpbm
-
-
-EMPTY = 0
-WHITE = 1
-BLACK = 2
-
-def opening_board():
-    return [
-            [EMPTY] * 8,
-            [EMPTY] * 8,
-            [EMPTY] * 8,
-            [EMPTY, EMPTY, EMPTY, WHITE, BLACK, EMPTY, EMPTY, EMPTY],
-            [EMPTY, EMPTY, EMPTY, BLACK, WHITE, EMPTY, EMPTY, EMPTY],
-            [EMPTY] * 8,
-            [EMPTY] * 8,
-            [EMPTY] * 8
-            ]
+import reversi
+from reversi import EMPTY, WHITE, BLACK
 
 
 class GameArt:
@@ -95,14 +80,37 @@ class GUI():
         print('I was clicked!')
 
 
+color = BLACK
 def create_gui():
+
+    def on_key(event):
+        global color
+        b = board
+
+        other = BLACK if color == WHITE else WHITE
+
+        v, m = reversi.minimax_move(b, 2, color, reversi.piece_count_heuristic)
+        if m is not None:
+            b = reversi.make_move(b, m[0], m[1], color)
+
+        color = other
+
+        draw_board(art, b)
+
+        im = art.canvas
+        photo = tk.PhotoImage(width=im.width, height=im.height, data=im.raw_bytes(), format='PPM')
+        label.configure(image=photo)
+        label.image = photo
+
     g = GUI()
 
     frame = tk.Frame()
+    frame.bind('<Key>', on_key)
+    frame.focus_set()
     frame.pack()
 
     art = create_game_art('ims/')
-    board = opening_board()
+    board = reversi.opening_board()
 
     draw_board(art, board)
     im = art.canvas

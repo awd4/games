@@ -3,7 +3,9 @@ from pyreversi import *
 try:
     import pyximport; pyximport.install()
     import cyreversi
-    from cyreversi import *
+    # Override functions in pyreversi with the fast versions in cyreversi
+    import pyreversi
+    pyreversi.is_valid_move = cyreversi.is_valid_move
 except:
     pass
 

@@ -45,3 +45,29 @@ cpdef is_valid_move(list board, int row, int col, int color):
     return False
 
 
+def make_move(list board, int row, int col, int color):
+    assert 0 <= row < 8
+    assert 0 <= col < 8
+    assert color in [WHITE, BLACK]
+    assert board[row][col] == EMPTY
+
+    cdef int dr, dc, other, r, c, l
+
+    other = BLACK if color == WHITE else WHITE
+
+    board[row][col] = color
+
+    for dr in range(-1, 2):
+        for dc in range(-1, 2):
+            if dr == 0 and dc == 0:
+                continue
+            if check_direction(board, row, col, color, dr, dc):
+                for l in range(1, 7):
+                    r = row + l * dr
+                    c = col + l * dc
+                    if board[r][c] == color:
+                        break
+                    board[r][c] = color
+    return board
+
+

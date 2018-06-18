@@ -163,6 +163,7 @@ try:
     import cyreversi
     # Override functions with the fast versions in cyreversi
     is_valid_move = cyreversi.is_valid_move
+    make_move = cyreversi.make_move
 except:
     pass
 

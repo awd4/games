@@ -76,9 +76,6 @@ class GUI():
     def __init__(self):
         self.frame = None
 
-    def button_clicked(self):
-        print('I was clicked!')
-
 
 color = BLACK
 def create_gui():
@@ -89,7 +86,8 @@ def create_gui():
 
         other = BLACK if color == WHITE else WHITE
 
-        v, m = reversi.minimax_move(b, 2, color, reversi.piece_count_heuristic)
+        depth = 4 if color == WHITE else 2
+        v, m = reversi.minimax_move(b, depth, color, reversi.piece_count_heuristic)
         if m is not None:
             b = reversi.make_move(b, m[0], m[1], color)
 

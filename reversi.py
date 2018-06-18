@@ -1,3 +1,5 @@
+import random
+
 
 EMPTY = 0
 WHITE = 1
@@ -126,6 +128,7 @@ def minimax_move(board, depth, color, heuristic):
     other = BLACK if color == WHITE else WHITE
 
     children = child_boards(board, color)
+    move_candidates = []
 
     if color == WHITE:
         best_value = float('-inf')
@@ -134,7 +137,10 @@ def minimax_move(board, depth, color, heuristic):
             v, _ = minimax_move(b, depth-1, other, heuristic)
             if v > best_value:
                 best_value = v
-                best_move = m
+                move_candidates = [m]
+            elif v == best_value:
+                move_candidates.append(m)
+        best_move = random.choice(move_candidates)
         return best_value, best_move 
 
     else:
@@ -144,22 +150,10 @@ def minimax_move(board, depth, color, heuristic):
             v, _ = minimax_move(b, depth-1, other, heuristic)
             if v < best_value:
                 best_value = v
-                best_move = m
+                move_candidates = [m]
+            elif v == best_value:
+                move_candidates.append(m)
+        best_move = random.choice(move_candidates)
         return best_value, best_move
-
-
-if __name__ == '__main__':
-    b = opening_board()
-
-    for i in range(30):
-        v, m = minimax_move(b, 1, BLACK, piece_count_heuristic)
-        print(v, m, 'black')
-        if m is not None:
-            b = make_move(b, m[0], m[1], BLACK)
-
-        v, m = minimax_move(b, 4, WHITE, piece_count_heuristic)
-        print(v, m, 'white')
-        if m is not None:
-            b = make_move(b, m[0], m[1], WHITE)
 
 

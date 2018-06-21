@@ -61,7 +61,7 @@ def all_valid_moves(board, color):
 
 
 def make_move_(board, row, col, color):
-    b = [[e for e in row] for row in board]
+    b = [list(row) for row in board]
     return make_move(b, row, col, color)
 
 
@@ -162,24 +162,31 @@ try:
     import pyximport; pyximport.install()
     import cyreversi
     # Override functions with the fast versions in cyreversi
+    opening_board = cyreversi.opening_board
     is_valid_move = cyreversi.is_valid_move
+    all_valid_moves = cyreversi.all_valid_moves
+    make_move_ = cyreversi.make_move_
     make_move = cyreversi.make_move
+    child_boards = cyreversi.child_boards
+    piece_count_heuristic = cyreversi.piece_count_heuristic
+    minimax_move = cyreversi.minimax_move
 except:
     pass
 
 
 if __name__ == '__main__':
     b = opening_board()
+    random.seed(10)
 
     import time
     start = time.time()
     for i in range(30):
-        v, m = minimax_move(b, 1, BLACK, piece_count_heuristic)
+        v, m = minimax_move(b, 2, BLACK, piece_count_heuristic)
         print(v, m, 'black')
         if m is not None:
             b = make_move(b, m[0], m[1], BLACK)
 
-        v, m = minimax_move(b, 4, WHITE, piece_count_heuristic)
+        v, m = minimax_move(b, 5, WHITE, piece_count_heuristic)
         print(v, m, 'white')
         if m is not None:
             b = make_move(b, m[0], m[1], WHITE)

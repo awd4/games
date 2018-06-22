@@ -7,16 +7,11 @@ BLACK = 2
 
 
 def opening_board():
-    return [
-            [EMPTY] * 8,
-            [EMPTY] * 8,
-            [EMPTY] * 8,
-            [EMPTY, EMPTY, EMPTY, WHITE, BLACK, EMPTY, EMPTY, EMPTY],
-            [EMPTY, EMPTY, EMPTY, BLACK, WHITE, EMPTY, EMPTY, EMPTY],
-            [EMPTY] * 8,
-            [EMPTY] * 8,
-            [EMPTY] * 8
-            ]
+    return [EMPTY] * 27 + \
+            [WHITE, BLACK] + \
+            [EMPTY] * 6 + \
+            [BLACK, WHITE] + \
+            [EMPTY] * 27
 
 
 def is_valid_move(board, row, col, color):
@@ -25,7 +20,7 @@ def is_valid_move(board, row, col, color):
     assert color in [WHITE, BLACK]
     other = BLACK if color == WHITE else WHITE
 
-    if board[row][col] != EMPTY:
+    if board[row * 8 + col] != EMPTY:
         return False
 
     def check_direction(dr, dc):
@@ -38,11 +33,11 @@ def is_valid_move(board, row, col, color):
             c = col + l * dc
             if r < 0 or r >= 8 or c < 0 or c >= 8:
                 return False
-            if l == 1 and board[r][c] != other:
+            if l == 1 and board[r * 8 + c] != other:
                 return False
-            if board[r][c] == EMPTY:
+            if board[r * 8 + c] == EMPTY:
                 return False
-            if board[r][c] == color:
+            if board[r * 8 + c] == color:
                 return True
 
     for dr, dc in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
@@ -61,7 +56,7 @@ def all_valid_moves(board, color):
 
 
 def make_move_(board, row, col, color):
-    b = [list(row) for row in board]
+    b = list(board)
     return make_move(b, row, col, color)
 
 
@@ -69,10 +64,10 @@ def make_move(board, row, col, color):
     assert 0 <= row < 8
     assert 0 <= col < 8
     assert color in [WHITE, BLACK]
-    assert board[row][col] == EMPTY
+    assert board[row * 8 + col] == EMPTY
     other = BLACK if color == WHITE else WHITE
 
-    board[row][col] = color
+    board[row * 8 + col] = color
 
     def check_direction(dr, dc):
         assert dr in [-1, 0, 1]
@@ -84,11 +79,11 @@ def make_move(board, row, col, color):
             c = col + l * dc
             if r < 0 or r >= 8 or c < 0 or c >= 8:
                 return False
-            if l == 1 and board[r][c] != other:
+            if l == 1 and board[r * 8 + c] != other:
                 return False
-            if board[r][c] == EMPTY:
+            if board[r * 8 + c] == EMPTY:
                 return False
-            if board[r][c] == color:
+            if board[r * 8 + c] == color:
                 return True
 
     for dr, dc in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
@@ -96,9 +91,9 @@ def make_move(board, row, col, color):
             for l in range(1, 7):
                 r = row + l * dr
                 c = col + l * dc
-                if board[r][c] == color:
+                if board[r * 8 + c] == color:
                     break
-                board[r][c] = color
+                board[r * 8 + c] = color
     return board
 
 
@@ -115,8 +110,8 @@ def child_boards(board, color):
 
 
 def piece_count_heuristic(board):
-    num_black = len([e for row in board for e in row if e == BLACK])
-    num_white = len([e for row in board for e in row if e == WHITE])
+    num_black = len([e for e in board if e == BLACK])
+    num_white = len([e for e in board if e == WHITE])
     return num_white - num_black
 
 

@@ -60,12 +60,12 @@ def draw_board(art, board):
     for i in range(8):
         for j in range(8):
 
-            if board[i][j] == EMPTY:
+            if board[i * 8 + j] == EMPTY:
                 continue
 
             x = 2 + (w + 2) * j
             y = 2 + (h + 2) * i
-            ptype = board[i][j]
+            ptype = board[i * 8 + j]
             p = art.pieces[ptype]
 
             art.canvas.overwrite_patch(x, y, p)
@@ -86,7 +86,7 @@ def create_gui():
 
         other = BLACK if color == WHITE else WHITE
 
-        depth = 4 if color == WHITE else 2
+        depth = 6 if color == WHITE else 4
         v, m = reversi.minimax_move(b, depth, color, reversi.piece_count_heuristic)
         if m is not None:
             b = reversi.make_move(b, m[0], m[1], color)

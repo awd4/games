@@ -19,6 +19,9 @@ cdef int EMPTY = 0
 cdef int WHITE = 1
 cdef int BLACK = 2
 
+cdef int FUTURE_MOVE = -1
+cdef int PASS_MOVE = -2
+
 
 # Game Data
 #   turn
@@ -181,7 +184,7 @@ cdef void print_state(State* state):
     cdef int i
     print('board:')
     print(np.array([int(state.board[i]) for i in range(64)]).reshape((8, 8)))
-    print('history: {} turn: {}'.format([int(state.history[i]) for i in range(60) if int(state.history[i]) != -1], state.turn))
+    print('history: {} turn: {}'.format([int(state.history[i]) for i in range(60) if int(state.history[i]) != FUTURE_MOVE], state.turn))
 
 
 cdef void set_opening(State* state):
@@ -197,7 +200,7 @@ cdef void set_opening(State* state):
     for i in range(37, 64):
         state.board[i] = EMPTY
     for i in range(60):
-        state.history[i] = -1
+        state.history[i] = FUTURE_MOVE
     state.turn = BLACK
 
 cdef void copy_state(State *src, State *dst) nogil:
@@ -205,7 +208,7 @@ cdef void copy_state(State *src, State *dst) nogil:
 
 cdef void add_child_states_of(BucketList *bl, State *state) nogil:
 
-    cdef int i, j, k, l, v, di, dj, i2, j2
+    cdef int i, j, k, l, v, di, dj, i2, j2, size
 
     cdef int other = BLACK if state.turn == WHITE else WHITE
 
@@ -213,6 +216,8 @@ cdef void add_child_states_of(BucketList *bl, State *state) nogil:
 
     cdef State *child
     cdef int8_t *board = state.board
+
+    size = bl.size
 
     for i in range(8):
         for j in range(8):
@@ -259,15 +264,13 @@ cdef void add_child_states_of(BucketList *bl, State *state) nogil:
             if not done:
                 continue
 
-            # TODO: handle the case where a player cannot make a move
-
             # create the child state
             child = next_state(bl)
             copy_state(state, child)
             child.board[k] = state.turn
             child.turn = other
             for l in range(60):
-                if child.history[l] == -1:
+                if child.history[l] == FUTURE_MOVE:
                     child.history[l] = k
                     break
 
@@ -294,6 +297,16 @@ cdef void add_child_states_of(BucketList *bl, State *state) nogil:
                         else:
                             done = True
                             break
+
+    # handle the case where a player cannot make a move
+    if bl.size == size:
+        child = next_state(bl)
+        copy_state(state, child)
+        child.turn = other
+        for l in range(60):
+            if child.history[l] == FUTURE_MOVE:
+                child.history[l] = PASS_MOVE
+                break
 
 
 cdef Search* make_search():
@@ -368,7 +381,6 @@ cdef int search_generations(Search* search, int num, int num_threads=4):
                 tid = threadid()
                 add_child_states_of(thread_bl[tid], state_at(prev, i))
 
-            print('transfer')
             for i in range(num_threads):
                 transfer_data(curr, thread_bl[i])
 

@@ -217,6 +217,11 @@ cdef void add_child_states_of(BucketList *bl, State *state) nogil:
     cdef State *child
     cdef int8_t *board = state.board
 
+    for l in range(60):
+        if state.history[l] == FUTURE_MOVE:
+            if state.history[l-1] == PASS_MOVE and state.history[l-2] == PASS_MOVE:
+                return
+
     size = bl.size
 
     for i in range(8):
@@ -400,19 +405,6 @@ seed_search(search)
 start = time.time()
 search_generations(search, 10, num_threads=16)
 print(time.time() - start)
-
-
-#cdef BucketList *bl1 = make_bucket_list()
-#cdef State *s0
-#
-#s0 = next_state(bl1)
-#set_opening(s0)
-#add_child_states_of(bl1, s0)
-#
-#for i in range(bl1.size):
-#    s0 = state_at(bl1, i)
-#    print_state(s0)
-#print(bl1.size)
 
 
 

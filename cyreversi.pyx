@@ -1,19 +1,20 @@
 # cython: profile = True
 
-from libc.stdint cimport int8_t, int32_t
+from libc.stdint cimport uintptr_t, int8_t, int32_t
 from libc.string cimport memcpy
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from cpython.array cimport array
 
+cimport cython
 from cython.parallel import prange, threadid
 
-cimport cython
 import random
 
 import numpy as np
 
 
-DEF ITEMS_PER_BUCKET = 10000
+cimport containers
+
 
 cdef int EMPTY = 0
 cdef int WHITE = 1
@@ -54,130 +55,12 @@ cdef struct State:
     int32_t turn
 
 
-cdef struct Bucket:
-    Bucket* next_bucket
-    State items[ITEMS_PER_BUCKET]
-
-
-cdef struct BucketList:
-    int size
-    Bucket *head_bucket
-
-
 cdef struct Search:
-    BucketList* l1
-    BucketList* l2
-    BucketList* last
+    containers.BucketList* l1
+    containers.BucketList* l2
+    containers.BucketList* last
 
 
-
-cdef BucketList* make_bucket_list():
-    cdef BucketList *bl = <BucketList *>PyMem_Malloc(1 * sizeof(BucketList))
-    bl.head_bucket = <Bucket *>PyMem_Malloc(1 * sizeof(Bucket))
-    bl.head_bucket.next_bucket = NULL
-    bl.size = 0
-    return bl
-
-cdef void del_bucket_list(BucketList* bl):
-    cdef Bucket *curr
-    cdef Bucket *tmp
-    if bl == NULL:
-        return
-    bl.size = 0
-    curr = bl.head_bucket
-    while curr != NULL:
-        tmp = curr.next_bucket
-        PyMem_Free(curr)
-        curr = tmp
-    bl.head_bucket = NULL
-    PyMem_Free(bl)
-
-cdef void clear_bucket_list(BucketList* bl):
-    bl.size = 0
-
-cdef void add_bucket(BucketList* bl) nogil:
-    cdef Bucket *curr
-    curr = bl.head_bucket
-    while curr.next_bucket != NULL:
-        curr = curr.next_bucket
-    with gil:
-        curr.next_bucket = <Bucket *>PyMem_Malloc(1 * sizeof(Bucket))
-    curr.next_bucket.next_bucket = NULL
-
-@cython.cdivision(True)
-cdef State* next_state(BucketList* bl) nogil:
-    cdef Bucket *curr = bl.head_bucket
-    cdef int i = bl.size
-    while i >= ITEMS_PER_BUCKET:
-        i -= ITEMS_PER_BUCKET
-        if curr.next_bucket == NULL:
-            add_bucket(bl)
-        curr = curr.next_bucket
-    bl.size += 1
-    return &curr.items[i]
-
-@cython.cdivision(True)
-cdef State* state_at(BucketList* bl, int i) nogil:
-    if i < 0 or i >= bl.size:
-        return NULL
-    cdef Bucket *curr = bl.head_bucket
-    while i >= ITEMS_PER_BUCKET:
-        i -= ITEMS_PER_BUCKET
-        if curr.next_bucket == NULL:
-            return NULL
-        curr = curr.next_bucket
-    return &curr.items[i]
-
-@cython.cdivision(True)
-cdef void transfer_data(BucketList* l1, BucketList* l2):
-    cdef int i, j, l1_last_size, l2_last_size
-    cdef Bucket *l1_last = l1.head_bucket
-    cdef Bucket *l2_last = l2.head_bucket
-    cdef Bucket *tmp = NULL
-    cdef Bucket *tmp2 = NULL
-    cdef State* s
-
-    if l2.size <= 0:
-        return
-
-    l1_last_size = l1.size
-    while l1_last.next_bucket != NULL and l1_last_size > ITEMS_PER_BUCKET:
-        l1_last = l1_last.next_bucket
-        l1_last_size -= ITEMS_PER_BUCKET
-
-    l2_last_size = l2.size
-    while l2_last.next_bucket != NULL:
-        l2_last = l2_last.next_bucket
-        l2_last_size -= ITEMS_PER_BUCKET
-
-    # prune off any extra, unused buckets in l1
-    if l1_last.next_bucket != NULL:
-        tmp = l1_last.next_bucket
-        while tmp != NULL:
-            tmp2 = tmp.next_bucket
-            PyMem_Free(tmp)
-            tmp = tmp2
-
-    # switch data from l2 into l1
-    l1_last.next_bucket = l2.head_bucket
-    l1.size += l2.size
-
-    # make l2 empty, but usable
-    l2.head_bucket = <Bucket *>PyMem_Malloc(1 * sizeof(Bucket))
-    l2.head_bucket.next_bucket = NULL
-    l2.size = 0
-
-    tmp = l2_last
-    j = l2_last_size - 1
-    for i in range(l1_last_size, ITEMS_PER_BUCKET):
-        copy_state(&tmp.items[j], &l1_last.items[i])
-        j -= 1
-        if j < 0:
-            # move to the second-to-last bucket, since the last is now empty
-            tmp = l1.head_bucket
-            while tmp.next_bucket != l2_last:
-                tmp = tmp.next_bucket
-            j = ITEMS_PER_BUCKET - 1
 
 
 cdef void print_state(State* state):
@@ -206,7 +89,7 @@ cdef void set_opening(State* state):
 cdef void copy_state(State *src, State *dst) nogil:
     memcpy(dst, src, sizeof(State))
 
-cdef void add_child_states_of(BucketList *bl, State *state) nogil:
+cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
 
     cdef int i, j, k, l, v, di, dj, i2, j2, size
 
@@ -270,7 +153,7 @@ cdef void add_child_states_of(BucketList *bl, State *state) nogil:
                 continue
 
             # create the child state
-            child = next_state(bl)
+            child = <State *>containers.bucket_list_add_item(bl)
             copy_state(state, child)
             child.board[k] = state.turn
             child.turn = other
@@ -305,7 +188,7 @@ cdef void add_child_states_of(BucketList *bl, State *state) nogil:
 
     # handle the case where a player cannot make a move
     if bl.size == size:
-        child = next_state(bl)
+        child = <State *>containers.bucket_list_add_item(bl)
         copy_state(state, child)
         child.turn = other
         for l in range(60):
@@ -316,16 +199,16 @@ cdef void add_child_states_of(BucketList *bl, State *state) nogil:
 
 cdef Search* make_search():
     cdef Search *search = <Search *>PyMem_Malloc(1 * sizeof(Search))
-    search.l1 = make_bucket_list()
-    search.l2 = make_bucket_list()
+    search.l1 = containers.bucket_list_make(sizeof(State))
+    search.l2 = containers.bucket_list_make(sizeof(State))
     search.last = NULL
     return search
 
 cdef void del_search(Search* search):
     if search == NULL:
         return
-    del_bucket_list(search.l1)
-    del_bucket_list(search.l2)
+    containers.bucket_list_del(search.l1)
+    containers.bucket_list_del(search.l2)
     search.last = NULL
     PyMem_Free(search)
 
@@ -333,7 +216,7 @@ cdef void seed_search(Search* search, State* state=NULL):
     if search.l1.size != 0:
         return
 
-    cdef State *tmp = next_state(search.l1)
+    cdef State *tmp = <State *>containers.bucket_list_add_item(search.l1)
 
     if state == NULL:
         set_opening(tmp)
@@ -350,9 +233,9 @@ cdef int search_generations(Search* search, int num, int num_threads=4):
 
     cdef int i, n
     cdef long tid
-    cdef BucketList *prev
-    cdef BucketList *curr
-    cdef BucketList *thread_bl[16]
+    cdef containers.BucketList *prev
+    cdef containers.BucketList *curr
+    cdef containers.BucketList *thread_bl[16]
 
     if num_threads == 1:
         print(search.last.size)
@@ -360,10 +243,10 @@ cdef int search_generations(Search* search, int num, int num_threads=4):
 
             prev = search.last
             curr = search.l2 if search.l1 == search.last else search.l1
-            clear_bucket_list(curr)
+            containers.bucket_list_clear(curr)
 
             for i in range(prev.size):
-                add_child_states_of(curr, state_at(prev, i))
+                add_child_states_of(curr, <State *>containers.bucket_list_get_item(prev, i))
 
             search.last = curr
 
@@ -371,30 +254,30 @@ cdef int search_generations(Search* search, int num, int num_threads=4):
 
     else:
         for i in range(num_threads):
-            thread_bl[i] = make_bucket_list()
+            thread_bl[i] = containers.bucket_list_make(sizeof(State))
 
         print(search.last.size)
         for n in range(num):
 
             prev = search.last
             curr = search.l2 if search.l1 == search.last else search.l1
-            clear_bucket_list(curr)
+            containers.bucket_list_clear(curr)
             for i in range(num_threads):
-                clear_bucket_list(thread_bl[i])
+                containers.bucket_list_clear(thread_bl[i])
 
             for i in prange(prev.size, nogil=True, num_threads=num_threads):
                 tid = threadid()
-                add_child_states_of(thread_bl[tid], state_at(prev, i))
+                add_child_states_of(thread_bl[tid], <State *>containers.bucket_list_get_item(prev, i))
 
             for i in range(num_threads):
-                transfer_data(curr, thread_bl[i])
+                containers.bucket_list_transfer_data(curr, thread_bl[i])
 
             search.last = curr
 
             print(search.last.size)
 
         for i in range(num_threads):
-            del_bucket_list(thread_bl[i])
+            containers.bucket_list_del(thread_bl[i])
 
 
 import time
@@ -403,7 +286,7 @@ import time
 cdef Search *search = make_search()
 seed_search(search)
 start = time.time()
-search_generations(search, 10, num_threads=16)
+search_generations(search, 9, num_threads=1)
 print(time.time() - start)
 
 

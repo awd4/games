@@ -79,8 +79,8 @@ cdef void bucket_list_transfer_data(BucketList* l1, BucketList* l2):
     cdef Bucket *l2_last = l2.head_bucket
     cdef Bucket *tmp1 = NULL
     cdef Bucket *tmp2 = NULL
-    cdef void *item1 = NULL
-    cdef void *item2 = NULL
+    cdef uintptr_t addr1 = 0
+    cdef uintptr_t addr2 = 0
 
     if l2.size <= 0:
         return
@@ -115,9 +115,9 @@ cdef void bucket_list_transfer_data(BucketList* l1, BucketList* l2):
     tmp2 = l2_last
     j = l2_last_size - 1
     for i in range(l1_last_size, ITEMS_PER_BUCKET):
-        item1 = &l1_last.items + i * l1_last.item_size
-        item2 = &tmp2.items + j * tmp2.item_size
-        memcpy(item1, item2, tmp2.item_size)
+        addr1 = <uintptr_t>&l1_last.items + i * l1_last.item_size
+        addr2 = <uintptr_t>&tmp2.items + j * tmp2.item_size
+        memcpy(<void *>addr1, <void *>addr2, tmp2.item_size)
 
         j -= 1
         if j < 0:

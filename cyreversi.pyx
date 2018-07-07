@@ -286,7 +286,7 @@ import time
 cdef Search *search = make_search()
 seed_search(search)
 start = time.time()
-search_generations(search, 9, num_threads=1)
+search_generations(search, 10, num_threads=16)
 print(time.time() - start)
 
 

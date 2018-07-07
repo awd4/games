@@ -26,7 +26,7 @@ cdef struct BucketList:
 
 
 
-cdef Bucket* bucket_make(int item_size)
+cdef Bucket* bucket_make(int item_size) nogil
 cdef void bucket_del(Bucket* b)
 
 

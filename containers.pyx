@@ -9,9 +9,11 @@ DEF ITEMS_PER_BUCKET = 10000
 
 
 
-cdef Bucket* bucket_make(int item_size):
+cdef Bucket* bucket_make(int item_size) nogil:
     cdef uintptr_t offset = <uintptr_t>&(<Bucket *>NULL).items
-    cdef Bucket *b = <Bucket *>PyMem_Malloc(offset + item_size * ITEMS_PER_BUCKET)
+    cdef Bucket *b
+    with gil:
+        b = <Bucket *>PyMem_Malloc(offset + item_size * ITEMS_PER_BUCKET)
     b.item_size = item_size
     b.next_bucket = NULL
     return b
@@ -52,8 +54,7 @@ cdef void* bucket_list_add_item(BucketList* bl) nogil:
     while i >= ITEMS_PER_BUCKET:
         i -= ITEMS_PER_BUCKET
         if curr.next_bucket == NULL:
-            with gil:
-                curr.next_bucket = bucket_make(curr.item_size)
+            curr.next_bucket = bucket_make(curr.item_size)
         curr = curr.next_bucket
     bl.size += 1
     cdef uintptr_t addr = <uintptr_t>&curr.items + i * curr.item_size

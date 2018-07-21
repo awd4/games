@@ -91,11 +91,12 @@ cdef void copy_state(State *src, State *dst) nogil:
 
 cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
 
-    cdef int i, j, k, l, v, di, dj, i2, j2, size
+    cdef int i, j, k, l, v, fi, di, dj, i2, j2, size
 
     cdef int other = BLACK if state.turn == WHITE else WHITE
 
-    cdef bint done
+    cdef bint flip
+    cdef int8_t flip_dirs[8]
 
     cdef State *child
     cdef int8_t *board = state.board
@@ -115,15 +116,21 @@ cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
             if board[k] != EMPTY:
                 continue
 
-            done = False
+            flip = False
 
+            for fi in range(8):
+                flip_dirs[fi] = 0
+
+            fi = -1
             for di in range(-1, 2):
                 for dj in range(-1, 2):
 
                     if di == 0 and dj == 0:
                         continue
 
-                    for l in range(1, 7):
+                    fi = fi + 1
+
+                    for l in range(1, 8):
 
                         i2 = i + l * di
                         j2 = j + l * dj
@@ -140,16 +147,11 @@ cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
                             break
 
                         elif v == state.turn:   # found a valid move
-                            done = True
+                            flip = True
+                            flip_dirs[fi] = 1
                             break
 
-                    if done:
-                        break
-
-                if done:
-                    break
-
-            if not done:
+            if not flip:
                 continue
 
             # create the child state
@@ -162,29 +164,25 @@ cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
                     child.history[l] = k
                     break
 
-            done = False
-
+            # flip pieces
+            fi = -1
             for di in range(-1, 2):
                 for dj in range(-1, 2):
 
                     if di == 0 and dj == 0:
                         continue
 
-                    for l in range(1, 7):
+                    fi = fi + 1
 
+                    if flip_dirs[fi] == 0:
+                        continue
+
+                    for l in range(1, 8):
                         i2 = i + l * di
                         j2 = j + l * dj
-
-                        if i2 < 0 or i2 > 7 or j2 < 0 or j2 > 7:
+                        if child.board[i2 * 8 + j2] == state.turn:
                             break
-
-                        v = child.board[i2 * 8 + j2]
-
-                        if v == other:
-                            child.board[i2 * 8 + j2] = state.turn
-                        else:
-                            done = True
-                            break
+                        child.board[i2 * 8 + j2] = state.turn
 
     # handle the case where a player cannot make a move
     if bl.size == size:
@@ -286,7 +284,7 @@ import time
 cdef Search *search = make_search()
 seed_search(search)
 start = time.time()
-search_generations(search, 10, num_threads=16)
+search_generations(search, 9, num_threads=1)
 print(time.time() - start)
 
 

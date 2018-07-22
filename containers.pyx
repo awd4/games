@@ -4,7 +4,7 @@ from libc.stdint cimport uintptr_t, int8_t, int32_t
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 
 
-DEF ITEMS_PER_BUCKET = 10000
+DEF ITEMS_PER_BUCKET = 64000000
 
 
 
@@ -27,6 +27,7 @@ cdef void bucket_del(Bucket* b):
 cdef BucketList* bucket_list_make(int item_size):
     cdef BucketList *bl = <BucketList *>PyMem_Malloc(1 * sizeof(BucketList))
     bl.head_bucket = bucket_make(item_size)
+    bl.tail_bucket = bl.head_bucket
     bl.size = 0
     return bl
 
@@ -42,22 +43,24 @@ cdef void bucket_list_del(BucketList* bl):
         bucket_del(curr)
         curr = tmp
     bl.head_bucket = NULL
+    bl.tail_bucket = NULL
     PyMem_Free(bl)
 
 cdef void bucket_list_clear(BucketList* bl) nogil:
+    bl.tail_bucket = bl.head_bucket
     bl.size = 0
 
 @cython.cdivision(True)
 cdef void* bucket_list_add_item(BucketList* bl) nogil:
-    cdef int i = bl.size
-    cdef Bucket *curr = bl.head_bucket
-    while i >= ITEMS_PER_BUCKET:
-        i -= ITEMS_PER_BUCKET
-        if curr.next_bucket == NULL:
-            curr.next_bucket = bucket_make(curr.item_size)
-        curr = curr.next_bucket
+    cdef Bucket *last = bl.tail_bucket
+    cdef int i = bl.size % ITEMS_PER_BUCKET
+    if i == ITEMS_PER_BUCKET - 1:
+        if last.next_bucket == NULL:
+            last.next_bucket = bucket_make(last.item_size)
+        last = last.next_bucket
+        i = 0
     bl.size += 1
-    cdef uintptr_t addr = <uintptr_t>&curr.items + i * curr.item_size
+    cdef uintptr_t addr = <uintptr_t>&last.items + i * last.item_size
     return <void *>addr
 
 @cython.cdivision(True)
@@ -75,9 +78,9 @@ cdef void* bucket_list_get_item(BucketList* bl, int i) nogil:
 
 @cython.cdivision(True)
 cdef void bucket_list_transfer_data(BucketList* l1, BucketList* l2):
-    cdef int i, j, l1_last_size, l2_last_size
-    cdef Bucket *l1_last = l1.head_bucket
-    cdef Bucket *l2_last = l2.head_bucket
+    cdef int i, j, l1_tail_size, l2_tail_size
+    cdef Bucket *l1_last = l1.tail_bucket
+    cdef Bucket *l2_last = l2.tail_bucket
     cdef Bucket *tmp1 = NULL
     cdef Bucket *tmp2 = NULL
     cdef uintptr_t addr1 = 0
@@ -86,47 +89,48 @@ cdef void bucket_list_transfer_data(BucketList* l1, BucketList* l2):
     if l2.size <= 0:
         return
 
-    l1_last_size = l1.size
-    while l1_last.next_bucket != NULL and l1_last_size > ITEMS_PER_BUCKET:
-        l1_last = l1_last.next_bucket
-        l1_last_size -= ITEMS_PER_BUCKET
-
-    l2_last_size = l2.size
-    while l2_last.next_bucket != NULL:
-        l2_last = l2_last.next_bucket
-        l2_last_size -= ITEMS_PER_BUCKET
-
     # prune off any extra, unused buckets in l1
-    if l1_last.next_bucket != NULL:
-        tmp1 = l1_last.next_bucket
+    if l1.tail_bucket.next_bucket != NULL:
+        tmp1 = l1.tail_bucket.next_bucket
+        l1.tail_bucket.next_bucket = NULL
         while tmp1 != NULL:
             tmp2 = tmp1.next_bucket
             bucket_del(tmp1)
             tmp1 = tmp2
 
+    l1_tail_size = l1.size % ITEMS_PER_BUCKET
+    l2_tail_size = l2.size % ITEMS_PER_BUCKET
+
     # switch data from l2 into l1
-    l1_last.next_bucket = l2.head_bucket
+    tmp1 = l1.tail_bucket
+    tmp1.next_bucket = l2.head_bucket
+    l1.tail_bucket = l2.tail_bucket
     l1.size += l2.size
 
     # make l2 empty, but still usable
     l2.head_bucket = bucket_make(l2.head_bucket.item_size)
     l2.head_bucket.next_bucket = NULL
+    l2.tail_bucket = l2.head_bucket
     l2.size = 0
 
-    tmp2 = l2_last
-    j = l2_last_size - 1
-    for i in range(l1_last_size, ITEMS_PER_BUCKET):
-        addr1 = <uintptr_t>&l1_last.items + i * l1_last.item_size
+    # move items from the new tail of l1 into the old tail of l1
+    tmp2 = l1.tail_bucket
+    j = l2_tail_size - 1
+    for i in range(l1_tail_size, ITEMS_PER_BUCKET):
+        addr1 = <uintptr_t>&tmp1.items + i * tmp1.item_size
         addr2 = <uintptr_t>&tmp2.items + j * tmp2.item_size
         memcpy(<void *>addr1, <void *>addr2, tmp2.item_size)
 
         j -= 1
         if j < 0:
             # move to the second-to-last bucket, since the last is now empty
-            tmp2 = l1.head_bucket
-            while tmp2.next_bucket != l2_last:
+            tmp2 = tmp1
+            while tmp2.next_bucket != l1.tail_bucket:
                 tmp2 = tmp2.next_bucket
+            l1.tail_bucket = tmp2
             j = ITEMS_PER_BUCKET - 1
+
+
 
 
 

@@ -22,6 +22,7 @@ cdef struct Bucket:
 cdef struct BucketList:
     int size
     Bucket *head_bucket
+    Bucket *tail_bucket
 
 
 

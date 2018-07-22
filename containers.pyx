@@ -1,25 +1,26 @@
 cimport cython
 from libc.string cimport memcpy
 from libc.stdint cimport uintptr_t, int8_t, int32_t
+from libc.stdlib cimport malloc, free
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 
 
-DEF ITEMS_PER_BUCKET = 64000000
-
+DEF ITEMS_PER_BUCKET = 2000000
 
 
 
 cdef Bucket* bucket_make(int item_size) nogil:
     cdef uintptr_t offset = <uintptr_t>&(<Bucket *>NULL).items
-    cdef Bucket *b
-    with gil:
-        b = <Bucket *>PyMem_Malloc(offset + item_size * ITEMS_PER_BUCKET)
+    cdef Bucket *b = <Bucket *>malloc(offset + item_size * ITEMS_PER_BUCKET)
+#    with gil:
+#        b = <Bucket *>PyMem_Malloc(offset + item_size * ITEMS_PER_BUCKET)
     b.item_size = item_size
     b.next_bucket = NULL
     return b
 
 cdef void bucket_del(Bucket* b):
-    PyMem_Free(b)
+#    PyMem_Free(b)
+    free(b)
 
 
 

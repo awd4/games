@@ -96,27 +96,11 @@ cdef void set_opening(State* state):
 
 cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
 
-    cdef uint64_t w_ups[7]
-    cdef uint64_t w_dns[7]
-    cdef uint64_t w_lfs[7]
-    cdef uint64_t w_rts[7]
-    cdef uint64_t w_urs[7]
-    cdef uint64_t w_uls[7]
-    cdef uint64_t w_drs[7]
-    cdef uint64_t w_dls[7]
-    cdef uint64_t b_ups[7]
-    cdef uint64_t b_dns[7]
-    cdef uint64_t b_lfs[7]
-    cdef uint64_t b_rts[7]
-    cdef uint64_t b_urs[7]
-    cdef uint64_t b_uls[7]
-    cdef uint64_t b_drs[7]
-    cdef uint64_t b_dls[7]
     cdef uint64_t up_moves, dn_moves, lf_moves, rt_moves, ur_moves, ul_moves, dr_moves, dl_moves
     cdef uint64_t moves
 
     cdef uint64_t e, w, b
-    cdef uint64_t mv, flip, tmp, other
+    cdef uint64_t mv, flip, tmp
 
     cdef int i, s
     cdef State *child
@@ -125,65 +109,104 @@ cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
     w = state.whites
     b = state.blacks
 
-    w_lfs[0] = not_rcol & (w << 1)
-    w_rts[0] = not_lcol & (w >> 1)
-    w_urs[0] = not_lcol & (w << 7)
-    w_uls[0] = not_rcol & (w << 9)
-    w_drs[0] = not_lcol & (w >> 9)
-    w_dls[0] = not_rcol & (w >> 7)
-    b_lfs[0] = not_rcol & (b << 1)
-    b_rts[0] = not_lcol & (b >> 1)
-    b_urs[0] = not_lcol & (b << 7)
-    b_uls[0] = not_rcol & (b << 9)
-    b_drs[0] = not_lcol & (b >> 9)
-    b_dls[0] = not_rcol & (b >> 7)
-    for i in range(7):
-        s = 8 * (i + 1)
-        w_ups[i] = (w << s)
-        w_dns[i] = (w >> s)
-        b_ups[i] = (b << s)
-        b_dns[i] = (b >> s)
-        if i == 0:
-            continue
-        w_lfs[i] = not_rcol & (w_lfs[i-1] << 1)
-        w_rts[i] = not_lcol & (w_rts[i-1] >> 1)
-        w_urs[i] = not_lcol & (w_urs[i-1] << 7)
-        w_uls[i] = not_rcol & (w_uls[i-1] << 9)
-        w_drs[i] = not_lcol & (w_drs[i-1] >> 9)
-        w_dls[i] = not_rcol & (w_dls[i-1] >> 7)
-        b_lfs[i] = not_rcol & (b_lfs[i-1] << 1)
-        b_rts[i] = not_lcol & (b_rts[i-1] >> 1)
-        b_urs[i] = not_lcol & (b_urs[i-1] << 7)
-        b_uls[i] = not_rcol & (b_uls[i-1] << 9)
-        b_drs[i] = not_lcol & (b_drs[i-1] >> 9)
-        b_dls[i] = not_rcol & (b_dls[i-1] >> 7)
+
+    cdef uint64_t c1, c2, c1_mv, c2_mv, c2_run
 
     if state.turn == WHITE:
-        up_moves = e & b_ups[0] & (w_ups[1] | b_ups[1] & (w_ups[2] | b_ups[2] & (w_ups[3] | b_ups[3] & (w_ups[4] | b_ups[4] & (w_ups[5] | b_ups[5] & w_ups[6])))))
-        dn_moves = e & b_dns[0] & (w_dns[1] | b_dns[1] & (w_dns[2] | b_dns[2] & (w_dns[3] | b_dns[3] & (w_dns[4] | b_dns[4] & (w_dns[5] | b_dns[5] & w_dns[6])))))
-        lf_moves = e & b_lfs[0] & (w_lfs[1] | b_lfs[1] & (w_lfs[2] | b_lfs[2] & (w_lfs[3] | b_lfs[3] & (w_lfs[4] | b_lfs[4] & (w_lfs[5] | b_lfs[5] & w_lfs[6])))))
-        rt_moves = e & b_rts[0] & (w_rts[1] | b_rts[1] & (w_rts[2] | b_rts[2] & (w_rts[3] | b_rts[3] & (w_rts[4] | b_rts[4] & (w_rts[5] | b_rts[5] & w_rts[6])))))
-        ur_moves = e & b_urs[0] & (w_urs[1] | b_urs[1] & (w_urs[2] | b_urs[2] & (w_urs[3] | b_urs[3] & (w_urs[4] | b_urs[4] & (w_urs[5] | b_urs[5] & w_urs[6])))))
-        ul_moves = e & b_uls[0] & (w_uls[1] | b_uls[1] & (w_uls[2] | b_uls[2] & (w_uls[3] | b_uls[3] & (w_uls[4] | b_uls[4] & (w_uls[5] | b_uls[5] & w_uls[6])))))
-        dr_moves = e & b_drs[0] & (w_drs[1] | b_drs[1] & (w_drs[2] | b_drs[2] & (w_drs[3] | b_drs[3] & (w_drs[4] | b_drs[4] & (w_drs[5] | b_drs[5] & w_drs[6])))))
-        dl_moves = e & b_dls[0] & (w_dls[1] | b_dls[1] & (w_dls[2] | b_dls[2] & (w_dls[3] | b_dls[3] & (w_dls[4] | b_dls[4] & (w_dls[5] | b_dls[5] & w_dls[6])))))
+        c1 = w
+        c2 = b
     else:
-        up_moves = e & w_ups[0] & (b_ups[1] | w_ups[1] & (b_ups[2] | w_ups[2] & (b_ups[3] | w_ups[3] & (b_ups[4] | w_ups[4] & (b_ups[5] | w_ups[5] & b_ups[6])))))
-        dn_moves = e & w_dns[0] & (b_dns[1] | w_dns[1] & (b_dns[2] | w_dns[2] & (b_dns[3] | w_dns[3] & (b_dns[4] | w_dns[4] & (b_dns[5] | w_dns[5] & b_dns[6])))))
-        lf_moves = e & w_lfs[0] & (b_lfs[1] | w_lfs[1] & (b_lfs[2] | w_lfs[2] & (b_lfs[3] | w_lfs[3] & (b_lfs[4] | w_lfs[4] & (b_lfs[5] | w_lfs[5] & b_lfs[6])))))
-        rt_moves = e & w_rts[0] & (b_rts[1] | w_rts[1] & (b_rts[2] | w_rts[2] & (b_rts[3] | w_rts[3] & (b_rts[4] | w_rts[4] & (b_rts[5] | w_rts[5] & b_rts[6])))))
-        ur_moves = e & w_urs[0] & (b_urs[1] | w_urs[1] & (b_urs[2] | w_urs[2] & (b_urs[3] | w_urs[3] & (b_urs[4] | w_urs[4] & (b_urs[5] | w_urs[5] & b_urs[6])))))
-        ul_moves = e & w_uls[0] & (b_uls[1] | w_uls[1] & (b_uls[2] | w_uls[2] & (b_uls[3] | w_uls[3] & (b_uls[4] | w_uls[4] & (b_uls[5] | w_uls[5] & b_uls[6])))))
-        dr_moves = e & w_drs[0] & (b_drs[1] | w_drs[1] & (b_drs[2] | w_drs[2] & (b_drs[3] | w_drs[3] & (b_drs[4] | w_drs[4] & (b_drs[5] | w_drs[5] & b_drs[6])))))
-        dl_moves = e & w_dls[0] & (b_dls[1] | w_dls[1] & (b_dls[2] | w_dls[2] & (b_dls[3] | w_dls[3] & (b_dls[4] | w_dls[4] & (b_dls[5] | w_dls[5] & b_dls[6])))))
-#up_moves = b_ups[5] & w_ups[6]
-#for i in range(5, 0, -1):
-#    up_moves = up_moves | w_ups[i]
-#    print('{:064b}'.format(up_moves))
-#    up_moves = up_moves & b_ups[i-1]
-#    print('{:064b}'.format(up_moves))
+        c1 = b
+        c2 = w
+
+    c1_mv = (c1 << 56)
+    c2_mv = (c2 << 48)
+    up_moves = c2_mv & c1_mv
+    for i in range(5, 0, -1):
+        c1_mv = (c1 << (8 * (i + 1)))
+        c2_mv = (c2 << (8 * i))
+        up_moves = c2_mv & (c1_mv | up_moves)
+    up_moves = up_moves & e
+
+
+    c1_mv = (c1 >> 56)
+    c2_mv = (c2 >> 48)
+    dn_moves = c2_mv & c1_mv
+    for i in range(5, 0, -1):
+        c1_mv = (c1 >> (8 * (i + 1)))
+        c2_mv = (c2 >> (8 * i))
+        dn_moves = c2_mv & (c1_mv | dn_moves)
+    dn_moves = dn_moves & e
+
+
+    c1_mv = not_rcol & (c1 << 1)
+    c1_mv = not_rcol & (c1_mv << 1)
+    c2_run = not_rcol & (c2 << 1)
+    lf_moves = c2_run & c1_mv
+    for i in range(1, 7):
+        c2_run = c2_run & not_rcol & (c2_run << 1)
+        c1_mv = not_rcol & (c1_mv << 1)
+        lf_moves = lf_moves | c2_run & c1_mv
+    lf_moves = lf_moves & e
+
+
+    c1_mv = not_lcol & (c1 >> 1)
+    c1_mv = not_lcol & (c1_mv >> 1)
+    c2_run = not_lcol & (c2 >> 1)
+    rt_moves = c2_run & c1_mv
+    for i in range(1, 7):
+        c2_run = c2_run & not_lcol & (c2_run >> 1)
+        c1_mv = not_lcol & (c1_mv >> 1)
+        rt_moves = rt_moves | c2_run & c1_mv
+    rt_moves = rt_moves & e
+
+
+    c1_mv = not_lcol & (c1 << 7)
+    c1_mv = not_lcol & (c1_mv << 7)
+    c2_run = not_lcol & (c2 << 7)
+    ur_moves = c2_run & c1_mv
+    for i in range(1, 7):
+        c2_run = c2_run & not_lcol & (c2_run << 7)
+        c1_mv = not_lcol & (c1_mv << 7)
+        ur_moves = ur_moves | c2_run & c1_mv
+    ur_moves = ur_moves & e
+
+
+    c1_mv = not_rcol & (c1 << 9)
+    c1_mv = not_rcol & (c1_mv << 9)
+    c2_run = not_rcol & (c2 << 9)
+    ul_moves = c2_run & c1_mv
+    for i in range(1, 7):
+        c2_run = c2_run & not_rcol & (c2_run << 9)
+        c1_mv = not_rcol & (c1_mv << 9)
+        ul_moves = ul_moves | c2_run & c1_mv
+    ul_moves = ul_moves & e
+
+
+    c1_mv = not_lcol & (c1 >> 9)
+    c1_mv = not_lcol & (c1_mv >> 9)
+    c2_run = not_lcol & (c2 >> 9)
+    dr_moves = c2_run & c1_mv
+    for i in range(1, 7):
+        c2_run = c2_run & not_lcol & (c2_run >> 9)
+        c1_mv = not_lcol & (c1_mv >> 9)
+        dr_moves = dr_moves | c2_run & c1_mv
+    dr_moves = dr_moves & e
+
+
+    c1_mv = not_rcol & (c1 >> 7)
+    c1_mv = not_rcol & (c1_mv >> 7)
+    c2_run = not_rcol & (c2 >> 7)
+    dl_moves = c2_run & c1_mv
+    for i in range(1, 7):
+        c2_run = c2_run & not_rcol & (c2_run >> 7)
+        c1_mv = not_rcol & (c1_mv >> 7)
+        dl_moves = dl_moves | c2_run & c1_mv
+    dl_moves = dl_moves & e
+
 
     moves = up_moves | dn_moves | lf_moves | rt_moves | ur_moves | ul_moves | dr_moves | dl_moves
+
 
     if moves == 0:
         child = <State *>containers.bucket_list_add_item(bl)
@@ -194,10 +217,6 @@ cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
             child.turn = WHITE
         return
 
-    if state.turn == WHITE:
-        other = b
-    else:
-        other = w
 
     for i in range(64):
         mv = (1ULL << i)
@@ -208,44 +227,45 @@ cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
 
         if mv & up_moves:
             tmp = mv >> 8
-            while tmp & other:
+            while tmp & c2:
                 flip = flip | tmp
                 tmp = tmp >> 8
         if mv & dn_moves:
             tmp = mv << 8
-            while tmp & other:
+            while tmp & c2:
                 flip = flip | tmp
                 tmp = tmp << 8
         if mv & lf_moves:
             tmp = mv >> 1
-            while tmp & other:
+            while tmp & c2:
                 flip = flip | tmp
                 tmp = tmp >> 1
         if mv & rt_moves:
             tmp = mv << 1
-            while tmp & other:
+            while tmp & c2:
                 flip = flip | tmp
                 tmp = tmp << 1
         if mv & ur_moves:
             tmp = mv >> 7
-            while tmp & other:
+            while tmp & c2:
                 flip = flip | tmp
                 tmp = tmp >> 7
         if mv & ul_moves:
             tmp = mv >> 9
-            while tmp & other:
+            while tmp & c2:
                 flip = flip | tmp
                 tmp = tmp >> 9
         if mv & dr_moves:
             tmp = mv << 9
-            while tmp & other:
+            while tmp & c2:
                 flip = flip | tmp
                 tmp = tmp << 9
         if mv & dl_moves:
             tmp = mv << 7
-            while tmp & other:
+            while tmp & c2:
                 flip = flip | tmp
                 tmp = tmp << 7
+
 
         child = <State *>containers.bucket_list_add_item(bl)
         child[0] = state[0]   # OR memcpy(child, state, sizeof(State))
@@ -259,17 +279,6 @@ cdef void add_child_states_of(containers.BucketList *bl, State *state) nogil:
             child.whites = state.whites & ~flip
             child.blacks = state.blacks | flip
             child.turn = WHITE
-
-#        with gil:
-#            if np.random.rand() < 0.1:
-#                print_state(state)
-#                print('|')
-#                print('V')
-#                print_state(child)
-#                print('')
-
-#        with gil:
-#            print_state(child)
 
 
 cdef Search* make_search():
@@ -360,10 +369,17 @@ cdef int search_generations(Search* search, int num, int num_threads=4):
 import time
 
 
+# TODO: there is a segfault that happens when the ITEMS_PER_BUCKET is too low and
+# multithreading is being used.
+#
+# NOTE: for single-threads a large ITEMS_PER_BUCKET really helps speed things up,
+# but for multi-threading a lower ITEMS_PER_BUCKET is better.
+
+
 cdef Search *search = make_search()
 seed_search(search)
 start = time.time()
-search_generations(search, 9, num_threads=1)
+search_generations(search, 11, num_threads=16)
 print(time.time() - start)
 
 

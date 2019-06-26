@@ -11,10 +11,43 @@ const white_mark = "o";
 const opening_blacks: u64 = 34628173824;
 const opening_whites: u64 = 68853694464;
 
+const left_bit: u64 = 0x8000000000000000;
 const right_col: u64 = 72340172838076673; 
 const left_col: u64 = 9259542123273814144;
 const not_right_col: u64 = 18374403900871474942;
 const not_left_col: u64 = 9187201950435737471;
+
+pub fn printBoard(blacks: u64, whites: u64) void {
+    warn(top_bot_mark);
+    var i: u6 = 0;
+    var c: u6 = 0;
+    while (true) {
+        c = i % 8;
+        if (c == 0) {
+            warn(side_mark);
+        }
+        if ((blacks << i) & left_bit != 0) {
+            warn(black_mark);
+        }
+        else if ((whites << i) & left_bit != 0) {
+            warn(white_mark);
+        }
+        else {
+            warn(empty_mark);
+        }
+        if (c == 7) {
+            warn("|\n");
+        }
+        else {
+            warn(empty_mark);
+        }
+        if (i == 63) {
+            break;
+        }
+        i += 1;
+    }
+    warn(top_bot_mark);
+}
 
 const Player = enum(u1) {
     Black,
@@ -28,35 +61,7 @@ const Board = struct {
         return ~(self.blacks | self.whites);
     }
     pub fn print(self: Board) void {
-        warn(top_bot_mark);
-        var i: u6 = 0;
-        var c: u6 = 0;
-        while (true) {
-            c = i % 8;
-            if (c == 0) {
-                warn(side_mark);
-            }
-            if ((self.blacks >> i) % 2 == 1) {
-                warn(black_mark);
-            }
-            else if ((self.whites >> i) % 2 == 1) {
-                warn(white_mark);
-            }
-            else {
-                warn(empty_mark);
-            }
-            if (c == 7) {
-                warn("|\n");
-            }
-            else {
-                warn(empty_mark);
-            }
-            if (i == 63) {
-                break;
-            }
-            i += 1;
-        }
-        warn(top_bot_mark);
+        printBoard(self.blacks, self.whites);
     }
 };
 
@@ -69,12 +74,57 @@ const States = struct {
 };
 
 pub fn addChildBoards(states: *States, index: u32) u32 {
-    var board = states.boards.at(index);
-    var turn = states.turns.at(index);
+    var up_moves: u64 = undefined;
+    var dn_moves: u64 = undefined;
+    var lf_moves: u64 = undefined;
+    var rt_moves: u64 = undefined;
+    var ur_moves: u64 = undefined;
+    var ul_moves: u64 = undefined;
+    var dr_moves: u64 = undefined;
+    var dl_moves: u64 = undefined;
+    var moves: u64 = undefined;
+
+    var mv: u64 = undefined;
+    var flip: u64 = undefined;
+    var tmp: u64 = undefined;
+    var c1_mv: u64 = undefined;
+    var c2_mv: u64 = undefined;
+    var c2_run: u64 = undefined;
+
+    var board: *Board = states.boards.at(index);
+    var turn: Player = states.turns.at(index).*;
 
     var e: u64 = board.empties();
     var b: u64 = board.blacks;
     var w: u64 = board.whites;
+
+    var c1: u64 = if (turn == Player.Black) b else w;
+    var c2: u64 = if (turn == Player.Black) w else b;
+
+    c1_mv = (c1 << 56);
+    c2_mv = (c2 << 48);
+    up_moves = c2_mv & c1_mv;
+    for ([5]u6{5, 4, 3, 2, 1}) |i| {
+        c1_mv = (c1 << (8 *% (i +% 1)));
+        c2_mv = (c2 << (8 *% i ));
+        up_moves = c2_mv & (c1_mv | up_moves);
+    }
+    up_moves = up_moves & e;
+
+    c1_mv = (c1 << 56);
+    c2_mv = (c2 << 48);
+    dn_moves = c2_mv & c1_mv;
+    for ([5]u6{5, 4, 3, 2, 1}) |i| {
+        c1_mv = (c1 >> (8 *% (i +% 1)));
+        c2_mv = (c2 >> (8 *% i ));
+        dn_moves = c2_mv & (c1_mv | dn_moves);
+    }
+    dn_moves = dn_moves & e;
+
+    warn("up moves:\n");
+    printBoard(0, up_moves);
+    warn("dn moves:\n");
+    printBoard(0, dn_moves);
 
     //TODO
 

@@ -49,6 +49,52 @@ pub fn printBoard(blacks: u64, whites: u64) void {
     warn(top_bot_mark);
 }
 
+pub fn rotatePiecesCCW(pieces: u64) u64 {
+    const lr: u64 = 1;
+    var rotated: u64 = 0;
+
+    var i: u6 = 0;
+    while (true) {
+        rotated <<= 1;
+
+        var dx: u6 = i % 8;
+        var dy: u6 = i / 8;
+        var mask: u64 = lr << (56 - dx * 8 + dy);
+        var set_piece: bool = (mask & pieces) != 0;
+
+        if (set_piece) {
+            rotated ^= 1;
+        }
+
+        if (i == 63) {
+            break;
+        }
+        i += 1;
+    }
+    return rotated;
+}
+
+pub fn flipPiecesTB(pieces: u64) u64 {
+    const row: u64 = 255;
+    var flipped: u64 = 0;
+
+    var i: u6 = 0;
+    while (true) {
+        flipped <<= 8;
+
+        var mask: u64 = row << (i * 8);
+        mask = mask & pieces;
+        mask = mask >> (i * 8);
+        flipped ^= mask;
+
+        if (i == 7) {
+            break;
+        }
+        i += 1;
+    }
+    return flipped;
+}
+
 const Player = enum(u1) {
     Black,
     White,
@@ -62,6 +108,45 @@ const Board = struct {
     }
     pub fn print(self: Board) void {
         printBoard(self.blacks, self.whites);
+    }
+    pub fn rotateCCW(self: *Board) void {
+        self.blacks = rotatePiecesCCW(self.blacks);
+        self.whites = rotatePiecesCCW(self.whites);
+    }
+    pub fn flipTB(self: *Board) void {
+        self.blacks = flipPiecesTB(self.blacks);
+        self.whites = flipPiecesTB(self.whites);
+    }
+    pub fn canonicalize(self: *Board) void {
+        var blacks: [8]u64 = undefined;
+        var whites: [8]u64 = undefined;
+        blacks[0] = self.blacks;
+        whites[0] = self.whites;
+        blacks[1] = rotatePiecesCCW(blacks[0]);
+        whites[1] = rotatePiecesCCW(whites[0]);
+        blacks[2] = rotatePiecesCCW(blacks[1]);
+        whites[2] = rotatePiecesCCW(whites[1]);
+        blacks[3] = rotatePiecesCCW(blacks[2]);
+        whites[3] = rotatePiecesCCW(whites[2]);
+        blacks[4] = flipPiecesTB(blacks[0]);
+        whites[4] = flipPiecesTB(whites[0]);
+        blacks[5] = flipPiecesTB(blacks[1]);
+        whites[5] = flipPiecesTB(whites[1]);
+        blacks[6] = flipPiecesTB(blacks[2]);
+        whites[6] = flipPiecesTB(whites[2]);
+        blacks[7] = flipPiecesTB(blacks[3]);
+        whites[7] = flipPiecesTB(whites[3]);
+        var min_index: u32 = 0;
+        var i: u32 = 1;
+        while (i < 8) {
+            if (blacks[i] < blacks[min_index] or
+                  (blacks[i] == blacks[min_index] and whites[i] < whites[min_index])) {
+                min_index = i;
+            }
+            i += 1;
+        }
+        self.blacks = blacks[min_index];
+        self.whites = whites[min_index];
     }
 };
 
@@ -159,6 +244,16 @@ pub fn main() !void {
 
     states.boards.at(0).print();
     warn("{}\n", next);
+
+    states.boards.at(0).blacks |= 7;
+    states.boards.at(0).print();
+    states.boards.at(0).rotateCCW();
+    states.boards.at(0).print();
+    states.boards.at(0).flipTB();
+    states.boards.at(0).print();
+
+    states.boards.at(0).canonicalize();
+    states.boards.at(0).print();
 }
 
 

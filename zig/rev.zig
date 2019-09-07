@@ -95,6 +95,37 @@ pub fn flipPiecesTB(pieces: u64) u64 {
     return flipped;
 }
 
+pub fn canonicalBoard(blacks: u64, whites: u64) Board {
+    var blacks_: [8]u64 = undefined;
+    var whites_: [8]u64 = undefined;
+    blacks_[0] = blacks;
+    whites_[0] = whites;
+    blacks_[1] = rotatePiecesCCW(blacks_[0]);
+    whites_[1] = rotatePiecesCCW(whites_[0]);
+    blacks_[2] = rotatePiecesCCW(blacks_[1]);
+    whites_[2] = rotatePiecesCCW(whites_[1]);
+    blacks_[3] = rotatePiecesCCW(blacks_[2]);
+    whites_[3] = rotatePiecesCCW(whites_[2]);
+    blacks_[4] = flipPiecesTB(blacks_[0]);
+    whites_[4] = flipPiecesTB(whites_[0]);
+    blacks_[5] = flipPiecesTB(blacks_[1]);
+    whites_[5] = flipPiecesTB(whites_[1]);
+    blacks_[6] = flipPiecesTB(blacks_[2]);
+    whites_[6] = flipPiecesTB(whites_[2]);
+    blacks_[7] = flipPiecesTB(blacks_[3]);
+    whites_[7] = flipPiecesTB(whites_[3]);
+    var min_index: u32 = 0;
+    var i: u32 = 1;
+    while (i < 8) {
+        if (blacks_[i] < blacks_[min_index] or
+              (blacks_[i] == blacks_[min_index] and whites_[i] < whites_[min_index])) {
+            min_index = i;
+        }
+        i += 1;
+    }
+    return Board { .blacks = blacks_[min_index], .whites = whites_[min_index] };
+}
+
 const Player = enum(u1) {
     Black,
     White,
@@ -118,35 +149,9 @@ const Board = struct {
         self.whites = flipPiecesTB(self.whites);
     }
     pub fn canonicalize(self: *Board) void {
-        var blacks: [8]u64 = undefined;
-        var whites: [8]u64 = undefined;
-        blacks[0] = self.blacks;
-        whites[0] = self.whites;
-        blacks[1] = rotatePiecesCCW(blacks[0]);
-        whites[1] = rotatePiecesCCW(whites[0]);
-        blacks[2] = rotatePiecesCCW(blacks[1]);
-        whites[2] = rotatePiecesCCW(whites[1]);
-        blacks[3] = rotatePiecesCCW(blacks[2]);
-        whites[3] = rotatePiecesCCW(whites[2]);
-        blacks[4] = flipPiecesTB(blacks[0]);
-        whites[4] = flipPiecesTB(whites[0]);
-        blacks[5] = flipPiecesTB(blacks[1]);
-        whites[5] = flipPiecesTB(whites[1]);
-        blacks[6] = flipPiecesTB(blacks[2]);
-        whites[6] = flipPiecesTB(whites[2]);
-        blacks[7] = flipPiecesTB(blacks[3]);
-        whites[7] = flipPiecesTB(whites[3]);
-        var min_index: u32 = 0;
-        var i: u32 = 1;
-        while (i < 8) {
-            if (blacks[i] < blacks[min_index] or
-                  (blacks[i] == blacks[min_index] and whites[i] < whites[min_index])) {
-                min_index = i;
-            }
-            i += 1;
-        }
-        self.blacks = blacks[min_index];
-        self.whites = whites[min_index];
+        const canonical_board = canonicalBoard(self.blacks, self.whites);
+        self.blacks = canonical_board.blacks;
+        self.whites = canonical_board.whites;
     }
 };
 
@@ -206,10 +211,10 @@ pub fn addChildBoards(states: *States, index: u32) u32 {
     }
     dn_moves = dn_moves & e;
 
-    warn("up moves:\n");
-    printBoard(0, up_moves);
-    warn("dn moves:\n");
-    printBoard(0, dn_moves);
+    //warn("up moves:\n");
+    //printBoard(0, up_moves);
+    //warn("dn moves:\n");
+    //printBoard(0, dn_moves);
 
     //TODO
 
@@ -254,6 +259,10 @@ pub fn main() !void {
 
     states.boards.at(0).canonicalize();
     states.boards.at(0).print();
+
+    const canonical_opening_board = canonicalBoard(opening_board.blacks, opening_board.whites);
+    canonical_opening_board.print();
+    opening_board.print();
 }
 
 

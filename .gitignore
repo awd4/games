@@ -1,3 +1,5 @@
 *.swp
 *.pyxbldc
 __pycache__
+c/rev
+nim/rev

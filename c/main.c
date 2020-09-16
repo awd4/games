@@ -1,4 +1,5 @@
 #include "board.h"
+#include "mtwister.h"
 
 #include <stdio.h>
 
@@ -22,4 +23,10 @@ int main(int argc, char** argv) {
 
   MakeBoardCanonical(&board);
   PrintBoard(&board);
+
+  MTRand rng = seedRand(4);
+  for (int i=0; i<10; ++i) {
+    uint64_t sample = genRandUniform(&rng, 10);
+    printf("%llu\n", sample);
+  }
 }

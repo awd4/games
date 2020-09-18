@@ -5,7 +5,7 @@
 
 #include <stdlib.h>
 
-#define BUCKET_SIZE 2 // 500000
+#define BUCKET_SIZE 500000
 
 typedef struct BoardBucket BoardBucket;
 
@@ -81,7 +81,7 @@ void PrintBoardList(BoardList *list) {
   }
 }
 
-void ResetBoardListIter(BoardList *list) {
+void ResetBoardIter(BoardList *list) {
   list->iter.curr = list->head;
   list->iter.index = 0;
 }
@@ -99,6 +99,23 @@ Board *NextBoard(BoardList *list) {
     list->iter.index++;
   }
   return found;
+}
+
+Board *LastBoard(BoardList *list) {
+  Board *found = NULL;
+  if (list->tail != NULL) {
+    found = &list->tail->boards[list->tail->count - 1];
+  }
+  return found;
+}
+
+uint32_t BoardListSize(BoardList *list) {
+  BoardBucket *curr = list->head;
+  uint32_t size = curr->count;
+  while (curr = curr->next) {
+    size += curr->count;
+  }
+  return size;
 }
 
 #endif // REV_BUCKET_LIST_H_

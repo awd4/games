@@ -3,6 +3,7 @@
 #include "bucket_list.h"
 
 #include <stdio.h>
+#include <stdbool.h>
 
 int main(int argc, char** argv) {
 
@@ -28,22 +29,37 @@ int main(int argc, char** argv) {
     printf("%lu\n", sample);
   }
 
-  Board current = OpeningBoard();
-
   BoardList list = MakeBoardList();
-  AddBoard(&list, &current);
+  Board opening_board = OpeningBoard();
+  AddBoard(&list, &opening_board);
 
-  ChildBoards children;
-  GenerateCanonicalChildBoards(&current, BLACKS_TURN, &children);
-  AddChildBoards(&list, &children);
+  Turn turn = BLACKS_TURN;
+  for (int i=0; i< 7; ++i) {
+    Board* last = LastBoard(&list);
+    Board* next;
+    while (next = NextBoard(&list)) {
 
-  current = children.boards[0];
-  GenerateCanonicalChildBoards(&current, WHITES_TURN, &children);
-  AddChildBoards(&list, &children);
+      ChildBoards children;
+      GenerateCanonicalChildBoards(next, turn, &children);
+      AddChildBoards(&list, &children);
 
-  Board* next;
-  while(next = NextBoard(&list)) {
-    PrintBoard(next);
+      if (next == last) {
+        break;
+      }
+    }
+
+    if (turn == BLACKS_TURN) {
+      turn = WHITES_TURN;
+    } else {
+      turn = BLACKS_TURN;
+    }
   }
+
+  ResetBoardIter(&list);
+  Board* next;
+  //while(next = NextBoard(&list)) {
+    //PrintBoard(next);
+  //}
   //PrintBoardList(&list);
+  printf("Num boards: %u\n", BoardListSize(&list));
 }

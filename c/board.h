@@ -46,6 +46,10 @@ bool BoardsEqual(Board *board1, Board *board2) {
 }
 
 void PrintBoard(Board *board) {
+  if (board == NULL) {
+    printf("Cannot print a NULL Board.");
+    return;
+  }
   printf("%s\n", MARK_TOP_BOT);
   for (int i = 0; i < 64; ++i) {
     int c = i % 8;

@@ -1,10 +1,10 @@
 #include "board.h"
 #include "mtwister.h"
+#include "bucket_list.h"
 
 #include <stdio.h>
 
 int main(int argc, char** argv) {
-  printf("Hello, world!\n");
 
   Board board = OpeningBoard();
   board.blacks |= 1;
@@ -30,18 +30,20 @@ int main(int argc, char** argv) {
 
   Board current = OpeningBoard();
 
-  printf("Opening board:\n");
-  PrintBoard(&current);
+  BoardList list = MakeBoardList();
+  AddBoard(&list, &current);
 
   ChildBoards children;
   GenerateCanonicalChildBoards(&current, BLACKS_TURN, &children);
-
-  printf("First generation:\n");
-  PrintChildBoards(&children);
+  AddChildBoards(&list, &children);
 
   current = children.boards[0];
   GenerateCanonicalChildBoards(&current, WHITES_TURN, &children);
-  printf("Second generation:\n");
-  PrintChildBoards(&children);
+  AddChildBoards(&list, &children);
 
+  Board* next;
+  while(next = NextBoard(&list)) {
+    PrintBoard(next);
+  }
+  //PrintBoardList(&list);
 }

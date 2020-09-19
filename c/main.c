@@ -1,6 +1,7 @@
 #include "board.h"
 #include "mtwister.h"
 #include "bucket_list.h"
+#include "explore.h"
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -31,35 +32,12 @@ int main(int argc, char** argv) {
 
   BoardList list = MakeBoardList();
   Board opening_board = OpeningBoard();
-  AddBoard(&list, &opening_board);
-
-  Turn turn = BLACKS_TURN;
-  for (int i=0; i< 7; ++i) {
-    Board* last = LastBoard(&list);
-    Board* next;
-    while (next = NextBoard(&list)) {
-
-      ChildBoards children;
-      GenerateCanonicalChildBoards(next, turn, &children);
-      AddChildBoards(&list, &children);
-
-      if (next == last) {
-        break;
-      }
-    }
-
-    if (turn == BLACKS_TURN) {
-      turn = WHITES_TURN;
-    } else {
-      turn = BLACKS_TURN;
-    }
-  }
+  CollectBoards(&opening_board, BLACKS_TURN, 4, &list);
 
   ResetBoardIter(&list);
   Board* next;
   //while(next = NextBoard(&list)) {
-    //PrintBoard(next);
-  //}
-  //PrintBoardList(&list);
+  //  PrintBoard(next);
+  //} 
   printf("Num boards: %u\n", BoardListSize(&list));
 }

@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
 
 int main(int argc, char** argv) {
 
@@ -30,9 +31,14 @@ int main(int argc, char** argv) {
     printf("%lu\n", sample);
   }
 
+  clock_t t0, t1;
+
   BoardList list = MakeBoardList();
   Board opening_board = OpeningBoard();
-  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 4, &list);
+  t0 = clock();
+  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 8, &list);
+  t1 = clock();
+  double bfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
 
   Board* next;
   ResetBoardIter(&list);
@@ -47,9 +53,15 @@ int main(int argc, char** argv) {
   }
 
   BoardList sample_list = MakeBoardList();
-  SampleBoardsWithinDepthRange(&opening_board, BLACKS_TURN, 5, 60, &rng, 10, &sample_list);
+  t0 = clock();
+  SampleBoardsWithinDepthRange(&opening_board, BLACKS_TURN, 5, 60, &rng, 300, &sample_list);
+  t1 = clock();
+  double dfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
   printf("Depth First Samples:\n");
   while(next = NextBoard(&sample_list)) {
-    PrintBoard(next);
+    //PrintBoard(next);
   } 
+
+  printf("%d, %d\n", BoardListSize(&list), BoardListSize(&sample_list));
+  printf("%f, %f\n", bfs_time, dfs_time);
 }

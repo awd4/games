@@ -68,7 +68,6 @@ void SampleBoardsWithinDepthRange(Board *start, Turn turn, int min_num_turns,
     if (num_turns_range > 0) {
       num_turns += genRandUniform(rng, num_turns_range);
     }
-    printf("%d\n", num_turns);
 
     Board sample = RandomSampleBoardDepthFirst(start, turn, num_turns, rng);
     AddBoard(list, &sample);

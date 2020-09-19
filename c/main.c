@@ -32,12 +32,24 @@ int main(int argc, char** argv) {
 
   BoardList list = MakeBoardList();
   Board opening_board = OpeningBoard();
-  CollectBoards(&opening_board, BLACKS_TURN, 4, &list);
+  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 4, &list);
 
-  ResetBoardIter(&list);
   Board* next;
+  ResetBoardIter(&list);
   //while(next = NextBoard(&list)) {
   //  PrintBoard(next);
   //} 
   printf("Num boards: %u\n", BoardListSize(&list));
+
+  for (int i=0; i<5; ++i) {
+    Board sample = RandomSampleBoardDepthFirst(&opening_board, BLACKS_TURN, 25, &rng);
+    PrintBoard(&sample);
+  }
+
+  BoardList sample_list = MakeBoardList();
+  SampleBoardsWithinDepthRange(&opening_board, BLACKS_TURN, 5, 60, &rng, 10, &sample_list);
+  printf("Depth First Samples:\n");
+  while(next = NextBoard(&sample_list)) {
+    PrintBoard(next);
+  } 
 }

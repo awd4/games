@@ -2,7 +2,7 @@
 #define REV_EXPLORE_H_
 
 #include "board.h"
-#include "bucket_list.h"
+#include "list.h"
 #include "mtwister.h"
 
 void CollectBoardsBreadthFirst(Board *start, Turn turn, int num_turns,

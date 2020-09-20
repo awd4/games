@@ -1,6 +1,6 @@
 #include "board.h"
 #include "mtwister.h"
-#include "bucket_list.h"
+#include "list.h"
 #include "explore.h"
 
 #include <stdio.h>
@@ -57,6 +57,7 @@ int main(int argc, char** argv) {
   SampleBoardsWithinDepthRange(&opening_board, BLACKS_TURN, 5, 60, &rng, 300, &sample_list);
   t1 = clock();
   double dfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
+
   printf("Depth First Samples:\n");
   while(next = NextBoard(&sample_list)) {
     //PrintBoard(next);

@@ -1,7 +1,11 @@
 #include "board.h"
-#include "mtwister.h"
-#include "list.h"
 #include "explore.h"
+#include "list.h"
+#include "mtwister.h"
+#include "table.h"
+
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -41,7 +45,7 @@ int main(int argc, char** argv) {
   double bfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
 
   Board* next;
-  ResetBoardIter(&list);
+  //ResetBoardIter(&list);
   //while(next = NextBoard(&list)) {
   //  PrintBoard(next);
   //} 
@@ -54,7 +58,7 @@ int main(int argc, char** argv) {
 
   BoardList sample_list = MakeBoardList();
   t0 = clock();
-  SampleBoardsWithinDepthRange(&opening_board, BLACKS_TURN, 5, 60, &rng, 300, &sample_list);
+  SampleBoardsWithinDepthRange(&opening_board, BLACKS_TURN, 8, 60, &rng, 5000, &sample_list);
   t1 = clock();
   double dfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
 
@@ -65,4 +69,27 @@ int main(int argc, char** argv) {
 
   printf("%d, %d\n", BoardListSize(&list), BoardListSize(&sample_list));
   printf("%f, %f\n", bfs_time, dfs_time);
+
+  Board table[500];
+  EvaluateHash32Function(&sample_list, hash1);
+  EvaluateHash32Function(&sample_list, hash2);
+  EvaluateHash32Function(&sample_list, hash3);
+  EvaluateHash32Function(&sample_list, hash4);
+  EvaluateHash32Function(&sample_list, hash5);
+  EvaluateHash32Function(&sample_list, hash6);
+  EvaluateHash32Function(&sample_list, hash7);
+  EvaluateHash32Function(&sample_list, hash8);
+  EvaluateHash32Function(&sample_list, hash9);
+
+  printf("\n");
+
+  EvaluateHash32Function(&list, hash1);
+  EvaluateHash32Function(&list, hash2);
+  EvaluateHash32Function(&list, hash3);
+  EvaluateHash32Function(&list, hash4);
+  EvaluateHash32Function(&list, hash5);
+  EvaluateHash32Function(&list, hash6);
+  EvaluateHash32Function(&list, hash7);
+  EvaluateHash32Function(&list, hash8);
+  EvaluateHash32Function(&list, hash9);
 }

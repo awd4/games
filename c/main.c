@@ -59,7 +59,8 @@ int main(int argc, char **argv) {
 
   BoardList sample_list = MakeBoardList();
   t0 = clock();
-  SampleBoardsWithinDepthRange(&opening_board, BLACKS_TURN, 6, 60, &rng, 15553,
+  SampleBoardsWithinDepthRange(&opening_board, BLACKS_TURN, 6, 60, &rng,
+                               15, // 553,
                                &sample_list);
   t1 = clock();
   double dfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
@@ -96,4 +97,16 @@ int main(int argc, char **argv) {
   EvaluateHash32Function(&list, hash8);
   EvaluateHash32Function(&list, hash9);
   EvaluateHash32Function(&list, hash10);
+
+  BoardSet set;
+  BoardSetInit(&set);
+
+  ResetBoardIter(&list);
+  while (next = NextBoard(&list)) {
+    BoardSetAdd(&set, next);
+    if (set.size > 1000) {
+      break;
+    }
+  }
+  printf("load: %f\n", set.size / (float)BoardSetCapacity(&set));
 }

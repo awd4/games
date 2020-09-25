@@ -3,6 +3,7 @@
 
 #include "board.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #define BUCKET_SIZE 500000
@@ -68,6 +69,20 @@ void AddBoard(BoardList *list, const Board *board) {
 void AddChildBoards(BoardList *list, const ChildBoards *children) {
   for (int i = 0; i < children->count; ++i) {
     AddBoard(list, &children->boards[i]);
+  }
+}
+
+void BoardListClear(BoardList *list) {
+  list->iter.curr = NULL;
+  list->iter.index = 0;
+
+  BoardBucket *curr;
+  while (list->head != NULL) {
+    curr = list->head;
+    list->head = curr->next;
+    curr->next = NULL;
+    curr->count = 0;
+    free(curr);
   }
 }
 

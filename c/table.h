@@ -4,6 +4,7 @@
 #include "board.h"
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef uint32_t H32(const Board *board);
@@ -77,7 +78,7 @@ uint32_t BoardSetCapacity(BoardSet *set) { return 1 << set->log_capacity; }
 void BoardSetInit(BoardSet *set) {
   set->hash = hash10;
   set->size = 0;
-  set->log_capacity = 10;
+  set->log_capacity = 5;
   set->boards = (Board *)calloc(BoardSetCapacity(set), sizeof(Board));
 }
 
@@ -91,8 +92,24 @@ void BoardSetFree(BoardSet *set) {
 void BoardSetAdd(BoardSet *set, const Board *board) {
   uint32_t capacity = BoardSetCapacity(set);
   float load = set->size / (float)capacity;
+  // printf("add\n");
   if (load > 0.7) {
     // resize
+    Board *old_boards = set->boards;
+
+    set->size = 0;
+    set->log_capacity++;
+    set->boards = (Board *)calloc(BoardSetCapacity(set), sizeof(Board));
+
+    for (int i = 0; i < capacity; ++i) {
+      if (old_boards[i].blacks == 0 && old_boards[i].whites == 0) {
+        continue;
+      }
+      BoardSetAdd(set, old_boards + i);
+    }
+    free(old_boards);
+
+    capacity = BoardSetCapacity(set);
   }
 
   uint32_t code = set->hash(board);
@@ -101,12 +118,41 @@ void BoardSetAdd(BoardSet *set, const Board *board) {
 
   // Linear probling.
   uint32_t index = hit;
-  while (set->boards[index].blacks != 0) {
+  while (1) {
+    if (set->boards[index].blacks == 0 && set->boards[index].whites == 0) {
+      break;
+    }
     index = (index + 1) % capacity;
   }
 
   set->boards[index] = *board;
   set->size++;
+}
+
+bool BoardSetHas(BoardSet *set, const Board *board) {
+  uint32_t capacity = BoardSetCapacity(set);
+  uint32_t code = set->hash(board);
+  int shift = 32 - set->log_capacity;
+  uint32_t hit = (code << shift) >> shift;
+
+  uint32_t index = hit;
+  bool found = false;
+  while (1) {
+    if (set->boards[index].blacks == 0 && set->boards[index].whites == 0) {
+      break;
+    }
+    if (set->boards[index].blacks == board->blacks &&
+        set->boards[index].whites == board->whites) {
+      found = true;
+      break;
+    }
+    index = (index + 1) % capacity;
+    if (index == hit) {
+      break;
+    }
+  }
+
+  return found;
 }
 
 #endif // REV_TABLE_H_

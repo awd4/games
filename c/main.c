@@ -103,9 +103,18 @@ int main(int argc, char **argv) {
 
   ResetBoardIter(&list);
   while (next = NextBoard(&list)) {
-    BoardSetAdd(&set, next);
-    if (set.size > 1000) {
-      break;
+    if (BoardSetHas(&set, next)) {
+      printf("Found a duplicate board. Yay!\n");
+      continue;
+    }
+    if (set.size < 91) {
+      BoardSetAdd(&set, next);
+      if (!BoardSetHas(&set, next)) {
+        printf("Something is wrong. The set should have this board already!\n");
+        exit(1);
+      }
+    } else {
+      // break;
     }
   }
   printf("load: %f\n", set.size / (float)BoardSetCapacity(&set));

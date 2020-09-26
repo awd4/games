@@ -130,17 +130,15 @@ void scratchpad() {
   printf("load: %f\n", set.size / (float)BoardSetCapacity(&set));
 }
 
-int main(int argc, char **argv) {
-  // scratchpad();
-
+void RandomVsRandom() {
   AI ai = AIMakeRandom();
 
   int black_wins = 0;
   int white_wins = 0;
   int ties = 0;
 
-  for (int i = 0; i < 1000; ++i) {
-    Game game = PlaySelf(&ai);
+  for (int i = 0; i < 100000; ++i) {
+    Game game = Play(&ai, &ai);
 
     if (game.black_count > game.white_count) {
       black_wins++;
@@ -149,6 +147,25 @@ int main(int argc, char **argv) {
     } else {
       ties++;
     }
+    if (i % 1000 == 0) {
+      printf("%d: %d\n", i, (black_wins - white_wins));
+    }
   }
+  printf("%d\n", (black_wins - white_wins));
   printf("(black/white/tie): (%d/%d/%d)\n", black_wins, white_wins, ties);
+}
+
+int main(int argc, char **argv) {
+  // scratchpad();
+
+  AI random = AIMakeRandom();
+  AI greedy = AIMakeGreedy();
+  printf("Random vs. Random\n");
+  PlayTournament(&random, &random, 10000);
+  printf("Random vs. Greedy\n");
+  PlayTournament(&random, &greedy, 10000);
+  printf("Greedy vs. Random\n");
+  PlayTournament(&greedy, &random, 10000);
+  printf("Greedy vs. Greedy\n");
+  PlayTournament(&greedy, &greedy, 10000);
 }

@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <time.h>
 
-int main(int argc, char **argv) {
+void scratchpad() {
 
   Board board = OpeningBoard();
   board.blacks |= 1;
@@ -40,16 +40,24 @@ int main(int argc, char **argv) {
   BoardList list = MakeBoardList();
   Board opening_board = OpeningBoard();
   t0 = clock();
-  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 7, &list);
+  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 8, &list);
   t1 = clock();
   double bfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
+  printf("Num boards:       %u\n", BoardListSize(&list));
+
+  BoardSet board_set;
+  BoardSetInit(&board_set);
+  t0 = clock();
+  CollectBoardSetBreadthFirst(&opening_board, BLACKS_TURN, 12, &board_set);
+  t1 = clock();
+  double bfs_set_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
 
   Board *next;
   // ResetBoardIter(&list);
   // while(next = NextBoard(&list)) {
   //  PrintBoard(next);
   //}
-  printf("Num boards: %u\n", BoardListSize(&list));
+  printf("Num boards (set): %u\n", board_set.size);
 
   for (int i = 0; i < 5; ++i) {
     Board sample =
@@ -71,7 +79,7 @@ int main(int argc, char **argv) {
   //}
 
   printf("%d, %d\n", BoardListSize(&list), BoardListSize(&sample_list));
-  printf("%f, %f\n", bfs_time, dfs_time);
+  printf("%f, %f, %f\n", bfs_time, bfs_set_time, dfs_time);
 
   Board table[500];
   EvaluateHash32Function(&sample_list, hash1);
@@ -118,4 +126,10 @@ int main(int argc, char **argv) {
     }
   }
   printf("load: %f\n", set.size / (float)BoardSetCapacity(&set));
+}
+
+int main(int argc, char **argv) {
+  // scratchpad();
+  Board board = OpeningBoard();
+  PrintBoard(&board);
 }

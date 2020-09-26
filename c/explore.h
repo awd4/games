@@ -4,24 +4,69 @@
 #include "board.h"
 #include "list.h"
 #include "mtwister.h"
+#include "table.h"
 
 void CollectBoardsBreadthFirst(Board *start, Turn turn, int num_turns,
                                BoardList *list) {
+  ResetBoardIter(list);
   AddBoard(list, start);
 
   for (int i = 0; i < num_turns; ++i) {
     Board *last = LastBoard(list);
     Board *next;
 
+    ChildBoards children;
     while (next = NextBoard(list)) {
 
-      ChildBoards children;
       GenerateCanonicalChildBoards(next, turn, &children);
       AddChildBoards(list, &children);
 
       if (next == last) {
         break;
       }
+    }
+
+    if (turn == BLACKS_TURN) {
+      turn = WHITES_TURN;
+    } else {
+      turn = BLACKS_TURN;
+    }
+  }
+}
+
+void CollectBoardSetBreadthFirst(Board *start, Turn turn, int num_turns,
+                                 BoardSet *set) {
+  BoardList list = MakeBoardList();
+  AddBoard(&list, start);
+
+  for (int i = 0; i < num_turns; ++i) {
+    Board *last = LastBoard(&list);
+    Board *next;
+
+    ChildBoards children;
+    while (next = NextBoard(&list)) {
+
+      GenerateCanonicalChildBoards(next, turn, &children);
+      for (int j = 0; j < children.count; ++j) {
+        if (!BoardSetHas(set, &children.boards[j])) {
+          BoardSetAdd(set, &children.boards[j]);
+          AddBoard(&list, &children.boards[j]);
+        }
+      }
+
+      if (next == last) {
+        break;
+      }
+    }
+
+    // Prune already-processed buckets.
+    while (list.head != list.iter.curr) {
+      BoardBucket *temp = list.head;
+      list.head = list.head->next;
+
+      temp->next = NULL;
+      temp->count = 0;
+      free(temp);
     }
 
     if (turn == BLACKS_TURN) {

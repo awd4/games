@@ -10,6 +10,10 @@
 #ifndef __MTWISTER_H
 #define __MTWISTER_H
 
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 /* changes to MT_STATE_VECTOR_LENGTH also require changes to MT_STATE_VECTOR_M
  */
 #define MT_STATE_VECTOR_LENGTH 624
@@ -43,6 +47,18 @@ MTRand seedRand(unsigned long seed) {
   MTRand rand;
   m_seedRand(&rand, seed);
   return rand;
+}
+
+// Create a new RNG, seeded from the system random number source.
+MTRand systemSeedRand() {
+  unsigned char buffer[8];
+  int fd = open("/dev/urandom", O_RDONLY);
+  if (fd < 0 || (8 != read(fd, buffer, 8))) {
+    exit(1);
+  }
+  close(fd);
+  unsigned long *seed_ptr = (unsigned long *)buffer;
+  return seedRand(*seed_ptr);
 }
 
 /**

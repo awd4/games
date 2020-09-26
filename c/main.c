@@ -1,3 +1,4 @@
+#include "ai.h"
 #include "board.h"
 #include "explore.h"
 #include "list.h"
@@ -9,6 +10,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 void scratchpad() {
@@ -130,6 +132,30 @@ void scratchpad() {
 
 int main(int argc, char **argv) {
   // scratchpad();
+
+  AI ai = AIMakeRandom();
+
   Board board = OpeningBoard();
-  PrintBoard(&board);
+  Turn turn = BLACKS_TURN;
+  ChildBoards children;
+
+  while (true) {
+    PrintBoard(&board);
+
+    GenerateChildBoards(&board, turn, &children);
+    if (children.count == 0) {
+      turn = (turn == BLACKS_TURN) ? WHITES_TURN : BLACKS_TURN;
+      GenerateChildBoards(&board, turn, &children);
+      if (children.count == 0) {
+        printf("Neither player can move!\n");
+        break;
+      }
+    }
+
+    int choice = ai.move(&ai, turn, &children);
+    board = children.boards[choice];
+    turn = (turn == BLACKS_TURN) ? WHITES_TURN : BLACKS_TURN;
+
+    getchar();
+  }
 }

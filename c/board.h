@@ -41,6 +41,15 @@ Board OpeningBoard() {
   return board;
 }
 
+void CountPieces(Board *board, int *black_count, int *white_count) {
+  *black_count = 0;
+  *white_count = 0;
+  for (int i = 0; i < 64; ++i) {
+    *black_count += (board->blacks >> i) & 1;
+    *white_count += (board->whites >> i) & 1;
+  }
+}
+
 bool BoardsEqual(Board *board1, Board *board2) {
   return board1->blacks == board2->blacks && board1->whites == board2->whites;
 }

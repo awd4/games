@@ -135,27 +135,20 @@ int main(int argc, char **argv) {
 
   AI ai = AIMakeRandom();
 
-  Board board = OpeningBoard();
-  Turn turn = BLACKS_TURN;
-  ChildBoards children;
+  int black_wins = 0;
+  int white_wins = 0;
+  int ties = 0;
 
-  while (true) {
-    PrintBoard(&board);
+  for (int i = 0; i < 1000; ++i) {
+    Game game = PlaySelf(&ai);
 
-    GenerateChildBoards(&board, turn, &children);
-    if (children.count == 0) {
-      turn = (turn == BLACKS_TURN) ? WHITES_TURN : BLACKS_TURN;
-      GenerateChildBoards(&board, turn, &children);
-      if (children.count == 0) {
-        printf("Neither player can move!\n");
-        break;
-      }
+    if (game.black_count > game.white_count) {
+      black_wins++;
+    } else if (game.white_count > game.black_count) {
+      white_wins++;
+    } else {
+      ties++;
     }
-
-    int choice = ai.move(&ai, turn, &children);
-    board = children.boards[choice];
-    turn = (turn == BLACKS_TURN) ? WHITES_TURN : BLACKS_TURN;
-
-    getchar();
   }
+  printf("(black/white/tie): (%d/%d/%d)\n", black_wins, white_wins, ties);
 }

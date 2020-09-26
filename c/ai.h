@@ -43,4 +43,52 @@ AI AIMakeRandom() {
   return random;
 }
 
+typedef struct Game {
+  int white_count;
+  int black_count;
+  Board history[60];
+  int length;
+} Game;
+
+Game PlaySelf(AI *ai) {
+  Board board = OpeningBoard();
+  Turn turn = BLACKS_TURN;
+  ChildBoards children;
+
+  Game game;
+  game.length = 0;
+
+  while (true) {
+    // PrintBoard(&board);
+
+    GenerateChildBoards(&board, turn, &children);
+    if (children.count == 0) {
+      turn = (turn == BLACKS_TURN) ? WHITES_TURN : BLACKS_TURN;
+      GenerateChildBoards(&board, turn, &children);
+      if (children.count == 0) {
+        // printf("Neither player can move!\n");
+        break;
+      }
+    }
+
+    int32_t choice = ai->move(ai, turn, &children);
+    board = children.boards[choice];
+    turn = (turn == BLACKS_TURN) ? WHITES_TURN : BLACKS_TURN;
+
+    game.history[game.length] = board;
+    game.length++;
+  }
+
+  CountPieces(&board, &game.black_count, &game.white_count);
+  if (game.black_count > game.white_count) {
+    printf("Black won.\n");
+  } else if (game.white_count > game.black_count) {
+    printf("White won.\n");
+  } else {
+    printf("Tie.\n");
+  }
+
+  return game;
+}
+
 #endif // REV_AI_H_

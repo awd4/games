@@ -130,42 +130,29 @@ void scratchpad() {
   printf("load: %f\n", set.size / (float)BoardSetCapacity(&set));
 }
 
-void RandomVsRandom() {
-  AI ai = AIMakeRandom();
-
-  int black_wins = 0;
-  int white_wins = 0;
-  int ties = 0;
-
-  for (int i = 0; i < 100000; ++i) {
-    Game game = Play(&ai, &ai);
-
-    if (game.black_count > game.white_count) {
-      black_wins++;
-    } else if (game.white_count > game.black_count) {
-      white_wins++;
-    } else {
-      ties++;
-    }
-    if (i % 1000 == 0) {
-      printf("%d: %d\n", i, (black_wins - white_wins));
-    }
-  }
-  printf("%d\n", (black_wins - white_wins));
-  printf("(black/white/tie): (%d/%d/%d)\n", black_wins, white_wins, ties);
-}
-
 int main(int argc, char **argv) {
   // scratchpad();
 
   AI random = AIMakeRandom();
   AI greedy = AIMakeGreedy();
+  AI pure_mcts = AIMakePureMCTS(50);
+
   printf("Random vs. Random\n");
-  PlayTournament(&random, &random, 10000);
+  // PlayTournament(&random, &random, 10000);
   printf("Random vs. Greedy\n");
-  PlayTournament(&random, &greedy, 10000);
+  // PlayTournament(&random, &greedy, 10000);
   printf("Greedy vs. Random\n");
-  PlayTournament(&greedy, &random, 10000);
+  // PlayTournament(&greedy, &random, 10000);
   printf("Greedy vs. Greedy\n");
-  PlayTournament(&greedy, &greedy, 10000);
+  // PlayTournament(&greedy, &greedy, 10000);
+
+  printf("\nRandom vs. Pure-MCTS\n");
+  // PlayTournament(&random, &pure_mcts, 1000);
+
+  printf("\nGreedy vs. Pure-MCTS\n");
+  PlayTournament(&greedy, &pure_mcts, 200);
+
+  pure_mcts.clear(&pure_mcts);
+  greedy.clear(&greedy);
+  random.clear(&random);
 }

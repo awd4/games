@@ -1,6 +1,7 @@
 #ifndef REV_BOARD_H_
 #define REV_BOARD_H_
 
+#include <immintrin.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -87,7 +88,7 @@ void PrintChildBoards(ChildBoards *children) {
   }
 }
 
-uint64_t RotatePiecesCCW(uint64_t pieces) {
+uint64_t RotatePiecesCCW_old_and_slow(uint64_t pieces) {
   uint64_t rotated = 0;
 
   for (int i = 0; i < 64; ++i) {
@@ -105,7 +106,34 @@ uint64_t RotatePiecesCCW(uint64_t pieces) {
   return rotated;
 }
 
-uint64_t FlipPiecesTB(uint64_t pieces) {
+uint64_t RotatePiecesCCW(uint64_t pieces) {
+  // Used calcperm.cpp from:
+  // http://programming.sirrida.de/index.php
+  // to generate this code. What a cool program!!
+  uint64_t x = pieces;
+  x = (_pext_u64(x, 0x5555555555555555) << 32) |
+      _pext_u64(x, 0xaaaaaaaaaaaaaaaa);
+  x = (_pext_u64(x, 0x5555555555555555) << 32) |
+      _pext_u64(x, 0xaaaaaaaaaaaaaaaa);
+  x = (_pext_u64(x, 0x5555555555555555) << 32) |
+      _pext_u64(x, 0xaaaaaaaaaaaaaaaa);
+
+  return x;
+}
+
+uint64_t RotatePiecesCW(uint64_t pieces) {
+  // Used calcperm.cpp from:
+  // http://programming.sirrida.de/index.php
+  // to generate this code. What a cool program!!
+  uint64_t x = pieces;
+  x = _pdep_u64(x >> 32, 0x5555555555555555) | _pdep_u64(x, 0xaaaaaaaaaaaaaaaa);
+  x = _pdep_u64(x >> 32, 0x5555555555555555) | _pdep_u64(x, 0xaaaaaaaaaaaaaaaa);
+  x = _pdep_u64(x >> 32, 0x5555555555555555) | _pdep_u64(x, 0xaaaaaaaaaaaaaaaa);
+
+  return x;
+}
+
+uint64_t FlipPiecesTB_old_and_slow(uint64_t pieces) {
   const uint64_t row = 255;
   uint64_t flipped = 0;
 
@@ -119,6 +147,12 @@ uint64_t FlipPiecesTB(uint64_t pieces) {
   }
 
   return flipped;
+}
+
+uint64_t FlipPiecesTB(uint64_t pieces) {
+  // Used calcperm.cpp to generate this. In hind-sight maybe this should have
+  // been obvious.
+  return __builtin_bswap64(pieces);
 }
 
 void RotateBoardCCW(Board *board) {

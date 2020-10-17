@@ -42,24 +42,28 @@ void scratchpad() {
   BoardList list = MakeBoardList();
   Board opening_board = OpeningBoard();
   t0 = clock();
-  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 8, &list);
+  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 9, &list);
   t1 = clock();
   double bfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
-  printf("Num boards:       %u\n", BoardListSize(&list));
+  printf("Num boards:       %u  (found in %fs)\n", BoardListSize(&list),
+         bfs_time);
 
   BoardSet board_set;
   BoardSetInit(&board_set);
   t0 = clock();
-  CollectBoardSetBreadthFirst(&opening_board, BLACKS_TURN, 12, &board_set);
+  CollectBoardSetBreadthFirst(&opening_board, BLACKS_TURN, 9, &board_set);
   t1 = clock();
   double bfs_set_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
+  printf("Num boards (set): %u  (found in %fs)\n", board_set.size,
+         bfs_set_time);
+
+  return;
 
   Board *next;
   // ResetBoardIter(&list);
   // while(next = NextBoard(&list)) {
   //  PrintBoard(next);
   //}
-  printf("Num boards (set): %u\n", board_set.size);
 
   for (int i = 0; i < 5; ++i) {
     Board sample =
@@ -130,9 +134,7 @@ void scratchpad() {
   printf("load: %f\n", set.size / (float)BoardSetCapacity(&set));
 }
 
-int main(int argc, char **argv) {
-  // scratchpad();
-
+void ai_stuff() {
   AI random = AIMakeRandom();
   AI greedy = AIMakeGreedy();
   AI pure_mcts = AIMakePureMCTS(50);
@@ -155,4 +157,10 @@ int main(int argc, char **argv) {
   pure_mcts.clear(&pure_mcts);
   greedy.clear(&greedy);
   random.clear(&random);
+}
+
+int main(int argc, char **argv) {
+  scratchpad();
+
+  // ai_stuff();
 }

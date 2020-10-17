@@ -94,8 +94,8 @@ void BoardSetAdd(BoardSet *set, const Board *board) {
   float load = set->size / (float)capacity;
   if (load > 0.7) {
     // resize
-    printf("resizing from %u to %u (%u).\n", capacity, 2 * capacity,
-           set->log_capacity);
+    // printf("resizing from %u to %u (%u).\n", capacity, 2 * capacity,
+    //       set->log_capacity);
     Board *old_boards = set->boards;
 
     set->size = 0;
@@ -111,7 +111,7 @@ void BoardSetAdd(BoardSet *set, const Board *board) {
     free(old_boards);
 
     capacity = BoardSetCapacity(set);
-    printf("done resizing\n");
+    // printf("done resizing\n");
   }
 
   uint32_t code = set->hash(board);

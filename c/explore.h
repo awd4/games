@@ -77,7 +77,7 @@ void CollectBoardSetBreadthFirst(Board *start, Turn turn, int num_turns,
   }
 }
 
-// Uniformly-sample across moves num_turns times. Return the resulting borad.
+// Uniformly-sample across moves num_turns times. Return the resulting board.
 Board RandomSampleBoardDepthFirst(Board *start, Turn turn, int num_turns,
                                   MTRand *rng) {
   Board sample = *start;

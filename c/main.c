@@ -42,7 +42,7 @@ void scratchpad() {
   BoardList list = MakeBoardList();
   Board opening_board = OpeningBoard();
   t0 = clock();
-  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 9, &list);
+  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 11, &list);
   t1 = clock();
   double bfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
   printf("Num boards:       %u  (found in %fs)\n", BoardListSize(&list),
@@ -51,7 +51,7 @@ void scratchpad() {
   BoardSet board_set;
   BoardSetInit(&board_set);
   t0 = clock();
-  CollectBoardSetBreadthFirst(&opening_board, BLACKS_TURN, 9, &board_set);
+  CollectBoardSetBreadthFirst(&opening_board, BLACKS_TURN, 11, &board_set);
   t1 = clock();
   double bfs_set_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
   printf("Num boards (set): %u  (found in %fs)\n", board_set.size,

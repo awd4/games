@@ -88,17 +88,16 @@ Tournament PlayTournament(AI *black_ai, AI *white_ai, int num_games) {
     tournament.white_wins += (game.result == GAME_WHITE_WON);
     tournament.ties += (game.result == GAME_TIE);
   }
+  printf("(black/white/tie): (%d/%d/%d)", tournament.black_wins,
+         tournament.white_wins, tournament.ties);
   if (tournament.black_wins > tournament.white_wins) {
-    printf("(black/white/tie): (%d/%d/%d)    Advantage BLACK by: %d\n",
-           tournament.black_wins, tournament.white_wins, tournament.ties,
+    printf("    Advantage BLACK by: %d\n",
            tournament.black_wins - tournament.white_wins);
   } else if (tournament.white_wins > tournament.black_wins) {
-    printf("(black/white/tie): (%d/%d/%d)    Advantage WHITE by: %d\n",
-           tournament.black_wins, tournament.white_wins, tournament.ties,
+    printf("    Advantage WHITE by: %d\n",
            tournament.white_wins - tournament.black_wins);
   } else {
-    printf("(black/white/tie): (%d/%d/%d)    TIED tournament!\n",
-           tournament.black_wins, tournament.white_wins, tournament.ties);
+    printf("    TIED tournament!\n");
   }
 
   return tournament;
@@ -218,6 +217,18 @@ AI AIMakePureMCTS(int num_playouts) {
   state->num_playouts = num_playouts;
   state->random = AIMakeRandom();
   return pure_mcts;
+}
+
+AI AIMakeSameTypeAs(AI *ai) {
+  if (ai->type == AI_RANDOM) {
+    return AIMakeRandom();
+  } else if (ai->type == AI_GREEDY) {
+    return AIMakeGreedy();
+  } else if (ai->type == AI_PURE_MCTS) {
+    AIStatePureMCTS *state = (AIStatePureMCTS *)ai->state;
+    return AIMakePureMCTS(state->num_playouts);
+  }
+  return AIMakeRandom();
 }
 
 #endif // REV_AI_H_

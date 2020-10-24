@@ -139,19 +139,12 @@ void ai_stuff() {
   AI greedy = AIMakeGreedy();
   AI pure_mcts = AIMakePureMCTS(100);
 
-  printf("Random vs. Random\n");
-  // PlayTournament(&random, &random, 10000);
-  printf("Random vs. Greedy\n");
-  // PlayTournament(&random, &greedy, 10000);
-  printf("Greedy vs. Random\n");
-  // PlayTournament(&greedy, &random, 10000);
-  printf("Greedy vs. Greedy\n");
-  // PlayTournament(&greedy, &greedy, 10000);
+  PlayTournament(&random, &random, 10000);
+  PlayTournament(&random, &greedy, 10000);
+  PlayTournament(&greedy, &random, 10000);
+  PlayTournament(&greedy, &greedy, 10000);
 
-  printf("\nRandom vs. Pure-MCTS\n");
   PlayTournament(&random, &pure_mcts, 400);
-
-  printf("\nGreedy vs. Pure-MCTS\n");
   PlayTournament(&greedy, &pure_mcts, 400);
 
   pure_mcts.clear(&pure_mcts);

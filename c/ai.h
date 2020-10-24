@@ -8,7 +8,6 @@ typedef enum {
   AI_RANDOM,
   AI_GREEDY,
   AI_PURE_MCTS,
-  AI_PARALLEL_PURE_MCTS,
 } AIType;
 
 typedef struct AI AI;
@@ -21,6 +20,19 @@ struct AI {
   ClearState *clear;
   void *state;
 };
+
+char *AIName(AI *ai) {
+  switch (ai->type) {
+  case AI_RANDOM:
+    return "AI_RANDOM";
+  case AI_GREEDY:
+    return "AI_GREEDY";
+  case AI_PURE_MCTS:
+    return "AI_PURE_MCTS";
+  default:
+    return "AI_UNKNOWN";
+  }
+}
 
 typedef enum { GAME_BLACK_WON, GAME_WHITE_WON, GAME_TIE } GameResult;
 
@@ -87,20 +99,25 @@ typedef struct Tournament {
 Tournament PlayTournament(AI *black_ai, AI *white_ai, int num_games) {
   Tournament tournament = {.black_wins = 0, .white_wins = 0, .ties = 0};
 
+  printf("%s vs. %s  Tournament  |  ", AIName(black_ai), AIName(white_ai));
+
 #pragma omp parallel for
   for (int i = 0; i < num_games; ++i) {
     Game game = Play(black_ai, white_ai);
-    tournament.black_wins += (game.result == GAME_BLACK_WON);
-    tournament.white_wins += (game.result == GAME_WHITE_WON);
-    tournament.ties += (game.result == GAME_TIE);
+#pragma omp critical(update_tournament_win_counts)
+    {
+      tournament.black_wins += (game.result == GAME_BLACK_WON);
+      tournament.white_wins += (game.result == GAME_WHITE_WON);
+      tournament.ties += (game.result == GAME_TIE);
+    }
   }
   printf("(black/white/tie): (%d/%d/%d)", tournament.black_wins,
          tournament.white_wins, tournament.ties);
   if (tournament.black_wins > tournament.white_wins) {
-    printf("    Advantage BLACK by: %d\n",
+    printf("    Advantage %s (as BLACK) by: %d\n", AIName(black_ai),
            tournament.black_wins - tournament.white_wins);
   } else if (tournament.white_wins > tournament.black_wins) {
-    printf("    Advantage WHITE by: %d\n",
+    printf("    Advantage %s (as WHITE) by: %d\n", AIName(white_ai),
            tournament.white_wins - tournament.black_wins);
   } else {
     printf("    TIED tournament!\n");

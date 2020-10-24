@@ -87,6 +87,7 @@ typedef struct Tournament {
 Tournament PlayTournament(AI *black_ai, AI *white_ai, int num_games) {
   Tournament tournament = {.black_wins = 0, .white_wins = 0, .ties = 0};
 
+#pragma omp parallel for
   for (int i = 0; i < num_games; ++i) {
     Game game = Play(black_ai, white_ai);
     tournament.black_wins += (game.result == GAME_BLACK_WON);
@@ -188,36 +189,6 @@ int32_t AIPureMCTS(AI *ai, Turn turn, const ChildBoards *choices) {
   return FairArgMax(wins_count, choices->count, (MTRand *)state->random.state);
 }
 
-typedef struct AIStateParallelPureMCTS {
-  int num_playouts;
-  AI random;
-} AIStateParallelPureMCTS;
-
-int32_t AIParallelPureMCTS(AI *ai, Turn turn, const ChildBoards *choices) {
-  AIStateParallelPureMCTS *state = (AIStateParallelPureMCTS *)ai->state;
-  int playouts_per_choice = state->num_playouts / choices->count;
-
-  GameResult winning_result =
-      (turn == BLACKS_TURN) ? GAME_BLACK_WON : GAME_WHITE_WON;
-  Turn next_turn = (turn == BLACKS_TURN) ? WHITES_TURN : BLACKS_TURN;
-
-  int wins_count[MAX_NUM_CHILD_BOARDS];
-  for (int i = 0; i < choices->count; ++i) {
-    wins_count[i] = 0;
-    for (int p = 0; p < playouts_per_choice; ++p) {
-      Game game = PlayFrom(&state->random, &state->random, &choices->boards[i],
-                           next_turn);
-      if (game.result == winning_result) {
-        wins_count[i] += 2;
-      } else if (game.result == GAME_TIE) {
-        wins_count[i] += 1;
-      }
-    }
-  }
-
-  return FairArgMax(wins_count, choices->count, (MTRand *)state->random.state);
-}
-
 void AIDefaultClear(AI *ai) {
   free(ai->state);
   ai->state = NULL;
@@ -225,12 +196,6 @@ void AIDefaultClear(AI *ai) {
 
 void AIClearPureMCTS(AI *ai) {
   AIStatePureMCTS *state = (AIStatePureMCTS *)ai->state;
-  state->random.clear(&state->random);
-  AIDefaultClear(ai);
-}
-
-void AIClearParallelPureMCTS(AI *ai) {
-  AIStateParallelPureMCTS *state = (AIStateParallelPureMCTS *)ai->state;
   state->random.clear(&state->random);
   AIDefaultClear(ai);
 }
@@ -260,18 +225,6 @@ AI AIMakePureMCTS(int num_playouts) {
   return pure_mcts;
 }
 
-AI AIMakeParallelPureMCTS(int num_playouts) {
-  AI parallel_pure_mcts = {.type = AI_PARALLEL_PURE_MCTS,
-                           .move = AIParallelPureMCTS,
-                           .clear = AIClearParallelPureMCTS,
-                           .state = malloc(sizeof(AIStateParallelPureMCTS))};
-  AIStateParallelPureMCTS *state =
-      (AIStateParallelPureMCTS *)parallel_pure_mcts.state;
-  state->num_playouts = num_playouts;
-  state->random = AIMakeRandom();
-  return parallel_pure_mcts;
-}
-
 AI AIMakeSameTypeAs(AI *ai) {
   if (ai->type == AI_RANDOM) {
     return AIMakeRandom();
@@ -280,9 +233,6 @@ AI AIMakeSameTypeAs(AI *ai) {
   } else if (ai->type == AI_PURE_MCTS) {
     AIStatePureMCTS *state = (AIStatePureMCTS *)ai->state;
     return AIMakePureMCTS(state->num_playouts);
-  } else if (ai->type == AI_PARALLEL_PURE_MCTS) {
-    AIStateParallelPureMCTS *state = (AIStateParallelPureMCTS *)ai->state;
-    return AIMakeParallelPureMCTS(state->num_playouts);
   }
   return AIMakeRandom();
 }

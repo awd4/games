@@ -37,25 +37,15 @@ void scratchpad() {
     // printf("%lu\n", sample);
   }
 
-  clock_t t0, t1;
-
   BoardList list = MakeBoardList();
   Board opening_board = OpeningBoard();
-  t0 = clock();
-  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 11, &list);
-  t1 = clock();
-  double bfs_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
-  printf("Num boards:       %u  (found in %fs)\n", BoardListSize(&list),
-         bfs_time);
+  CollectBoardsBreadthFirst(&opening_board, BLACKS_TURN, 10, &list);
+  printf("Num boards:       %u\n", BoardListSize(&list));
 
   BoardSet board_set;
   BoardSetInit(&board_set);
-  t0 = clock();
-  CollectBoardSetBreadthFirst(&opening_board, BLACKS_TURN, 11, &board_set);
-  t1 = clock();
-  double bfs_set_time = (double)(t1 - t0) / CLOCKS_PER_SEC;
-  printf("Num boards (set): %u  (found in %fs)\n", board_set.size,
-         bfs_set_time);
+  CollectBoardSetBreadthFirst(&opening_board, BLACKS_TURN, 10, &board_set);
+  printf("Num boards (set): %u\n", board_set.size);
 
   return;
 
@@ -72,6 +62,7 @@ void scratchpad() {
   }
 
   BoardList sample_list = MakeBoardList();
+  clock_t t0, t1;
   t0 = clock();
   SampleBoardsWithinDepthRange(&opening_board, BLACKS_TURN, 6, 60, &rng,
                                15, // 553,
@@ -85,7 +76,6 @@ void scratchpad() {
   //}
 
   printf("%d, %d\n", BoardListSize(&list), BoardListSize(&sample_list));
-  printf("%f, %f, %f\n", bfs_time, bfs_set_time, dfs_time);
 
   Board table[500];
   EvaluateHash32Function(&sample_list, hash1);
